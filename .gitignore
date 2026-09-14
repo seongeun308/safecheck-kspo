@@ -1,0 +1,5 @@
+# download_images.py로 내려받는 이미지 (재실행으로 복원 가능)
+data/images/
+
+# macOS
+.DS_Store
