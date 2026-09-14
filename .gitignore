@@ -1,5 +1,70 @@
-# download_images.py로 내려받는 이미지 (재실행으로 복원 가능)
-data/images/
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# macOS
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### macOS ###
 .DS_Store
+.AppleDouble
+._*
+
+### 시크릿 — 커밋 금지 ###
+.env
+.env.*
+*.key
+*.pem
+application-local.properties
+application-secret.properties
+src/main/resources/application-local.properties
+src/main/resources/application-secret.properties
+
+### 로그 ###
+*.log
+logs/
+
+### 작업 산출물 ###
+# 원본 CSV는 커밋, 중간 산출물은 제외
+data/raw/
+data/tmp/
+contact_sheet.jpg
+*.tmp
+
+### Python (데이터 정제 스크립트용) ###
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
