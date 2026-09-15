@@ -316,7 +316,7 @@ df[["회차", "등급", "내용"]] = df["지적사항"].str.extract(
 ```
 
 ```python
-# 이미지 일괄 수집 — scripts/download_images.py
+# 이미지 일괄 수집 — data/script/download_images.py
 import pandas as pd, urllib.request, os, time
 df = pd.read_csv("data/defects.csv")
 os.makedirs("data/images", exist_ok=True)
