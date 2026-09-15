@@ -1,0 +1,2 @@
+# 데이터 정제 스크립트용 (data/script/). Python 3.14에서 확인.
+pandas==3.0.5
