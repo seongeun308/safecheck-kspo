@@ -106,11 +106,13 @@ safecheck-kspo/
 │   └── prompt-design.md        판정 프롬프트 설계 (예정)
 ├── data/
 │   ├── defects.csv             원본 CSV (UTF-8 변환본)
-│   ├── defects_parsed.csv      지적사항 구조화 파싱 결과
 │   ├── inspection_items.json   공식 점검항목 22종
-│   └── images/                 결함 사례 이미지 265건
-├── scripts/
-│   └── download_images.py      이미지 일괄 수집
+│   ├── defect_cases.json       결함 사례 265건 (시설 식별 정보 제외)
+│   ├── images/                 결함 사례 이미지 265건
+│   └── script/
+│       ├── download_images.py  이미지 일괄 수집
+│       ├── build_data.py       CSV → JSON 변환
+│       └── requirements.txt    Python 의존성
 └── src/                        애플리케이션
 ```
 
