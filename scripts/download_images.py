@@ -6,7 +6,7 @@
 import csv, os, ssl, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # data/
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 CSV = os.path.join(BASE, "defects.csv")
 OUT = os.path.join(BASE, "images")
 

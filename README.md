@@ -108,11 +108,11 @@ safecheck-kspo/
 │   ├── defects.csv             원본 CSV (UTF-8 변환본)
 │   ├── inspection_items.json   공식 점검항목 22종
 │   ├── defect_cases.json       결함 사례 265건 (시설 식별 정보 제외)
-│   ├── images/                 결함 사례 이미지 265건
-│   └── script/
-│       ├── download_images.py  이미지 일괄 수집
-│       ├── build_data.py       CSV → JSON 변환
-│       └── requirements.txt    Python 의존성
+│   └── images/                 결함 사례 이미지 265건
+├── scripts/                    데이터 생성 코드
+│   ├── download_images.py      이미지 일괄 수집
+│   ├── build_data.py           CSV → JSON 변환
+│   └── requirements.txt        Python 의존성
 └── src/                        애플리케이션
 ```
 

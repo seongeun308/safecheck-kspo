@@ -1,6 +1,6 @@
 """data/defects.csv → data/inspection_items.json, data/defect_cases.json 생성.
 
-실행: python data/script/build_data.py (프로젝트 루트 기준 경로를 스크립트 위치로 계산하므로 cwd 무관)
+실행: python scripts/build_data.py (프로젝트 루트 기준 경로를 스크립트 위치로 계산하므로 cwd 무관)
 
 원칙
 - 원문 데이터를 임의로 보정하지 않는다. 이상값은 콘솔에 보고만 하고 원문을 유지한다.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 CSV_PATH = DATA_DIR / "defects.csv"
 IMAGES_DIR = DATA_DIR / "images"
