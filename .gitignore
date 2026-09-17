@@ -68,3 +68,6 @@ __pycache__/
 .venv/
 venv/
 .ipynb_checkpoints/
+
+### 테스트용 샘플 (로컬 전용) ###
+src/test/resources/samples/

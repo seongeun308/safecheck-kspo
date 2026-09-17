@@ -147,3 +147,9 @@ safecheck-kspo/
 - 서비스 URL: https://safecheck-kspo-682633822319.asia-northeast3.run.app
 - 최초 배포일: 2026-09-14
 - 리전: asia-northeast3 (서울)
+
+## 테스트
+
+EXIF 방향 보정 테스트는 `src/test/resources/samples/portrait.jpg`가 있을 때만
+실행됩니다. 휴대폰으로 세로 촬영한 사진을 직접 두면 됩니다.
+(개인 사진이므로 저장소에는 포함하지 않습니다)
