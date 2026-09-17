@@ -1,0 +1,163 @@
+[
+  {
+    "defectObserved": "YES",
+    "judgements": [
+      {
+        "itemId": 2,
+        "itemName": "탈락, 철근노출",
+        "confidence": 0.85,
+        "evidence": "창대 단부 콘크리트가 탈락하며 부식된 철근이 외부로 노출"
+      },
+      {
+        "itemId": 1,
+        "itemName": "균열, 누수",
+        "confidence": 0.60,
+        "evidence": "노출부에서 벽체 하부로 균열이 연장되고 주변에 백태로 보이는 백색 석출물 존재"
+      },
+      {
+        "itemId": 10,
+        "itemName": "창호문,방충망",
+        "confidence": 0.20,
+        "evidence": "창호 하부 접합부 실링 열화가 동반되나 창호 자체 결함 여부는 확인 불가"
+      }
+    ],
+    "notice": "건물 외부 창호 하부 창대 콘크리트 탈락, 철근 노출 및 부식",
+    "imageQuality": {
+      "sufficient": true,
+      "issue": ""
+    },
+    "needsWiderShot": false,
+    "noticeText": ""
+  },
+  {
+    "defectObserved": "YES",
+    "judgements": [
+      {
+        "itemId": 6,
+        "itemName": "마감재파손",
+        "confidence": 0.80,
+        "evidence": "천정 마감면이 원형으로 깨져 개구부가 노출되고 주변 마감재가 탈락"
+      },
+      {
+        "itemId": 16,
+        "itemName": "광고간판, 조명",
+        "confidence": 0.45,
+        "evidence": "노출된 부재가 조명기구 취부용 박스로 보이며 기구가 제거·탈락된 상태"
+      }
+    ],
+    "notice": "건물 내부 비구조부 천정 마감재 파손, 조명기구 취부부 개구부 노출",
+    "imageQuality": {
+      "sufficient": true,
+      "issue": ""
+    },
+    "needsWiderShot": false,
+    "noticeText": ""
+  },
+  {
+    "defectObserved": "YES",
+    "judgements": [
+      {
+        "itemId": 1,
+        "itemName": "균열, 누수",
+        "confidence": 0.70,
+        "evidence": "개구부 상부 모서리에서 사선으로 진행된 전형적인 개구부 우각부 균열"
+      },
+      {
+        "itemId": 6,
+        "itemName": "마감재파손",
+        "confidence": 0.40,
+        "evidence": "개구부 좌측 상인방 접합부를 따라 마감재 균열·들뜸이 동반"
+      }
+    ],
+    "notice": "건물 내부 출입구 상부 벽체 사인장 균열",
+    "imageQuality": {
+      "sufficient": true,
+      "issue": ""
+    },
+    "needsWiderShot": false,
+    "noticeText": ""
+  },
+  {
+    "defectObserved": "YES",
+    "judgements": [
+      {
+        "itemId": 6,
+        "itemName": "마감재파손",
+        "confidence": 0.50,
+        "evidence": "석재 마감 모서리가 결손되고 줄눈·충전재가 탈락"
+      },
+      {
+        "itemId": 15,
+        "itemName": "부대시설",
+        "confidence": 0.30,
+        "evidence": "인접 금속 원형 부재가 볼라드·지주 등 부대시설일 경우 정착부 손상에 해당"
+      },
+      {
+        "itemId": 11,
+        "itemName": "난간의 흔들림",
+        "confidence": 0.15,
+        "evidence": "금속 부재가 난간 지주일 가능성이 있으나 흔들림 여부는 사진으로 확인 불가"
+      }
+    ],
+    "notice": "건물주변 외벽 하부 석재 모서리 파손, 줄눈 탈락",
+    "imageQuality": {
+      "sufficient": false,
+      "issue": "프레임이 지나치게 근접하여 금속 부재의 정체를 특정할 수 없음"
+    },
+    "needsWiderShot": true,
+    "noticeText": ""
+  },
+  {
+    "defectObserved": "YES",
+    "judgements": [
+      {
+        "itemId": 15,
+        "itemName": "부대시설",
+        "confidence": 0.75,
+        "evidence": "화단 경계 담장 상부 갓돌이 이탈·회전하여 단차와 벌어짐이 발생"
+      },
+      {
+        "itemId": 19,
+        "itemName": "부동침하",
+        "confidence": 0.35,
+        "evidence": "갓돌 열이 연속적으로 어긋난 양상이 하부 지반 침하에 기인할 가능성"
+      }
+    ],
+    "notice": "건물주변 부대시설 화단 경계 담장 갓돌 이탈 및 단차",
+    "imageQuality": {
+      "sufficient": true,
+      "issue": ""
+    },
+    "needsWiderShot": false,
+    "noticeText": ""
+  },
+  {
+    "defectObserved": "NO",
+    "judgements": [],
+    "notice": "",
+    "imageQuality": {
+      "sufficient": true,
+      "issue": ""
+    },
+    "needsWiderShot": false,
+    "noticeText": "제시된 사진에서 22개 점검항목에 해당하는 결함이 관찰되지 않습니다."
+  },
+  {
+    "defectObserved": "UNCERTAIN",
+    "judgements": [
+      {
+        "itemId": 6,
+        "itemName": "마감재파손",
+        "confidence": 0.35,
+        "evidence": "표면에 얼룩이 관찰되나 마감재 열화인지 단순 오염인지 구분되지 않음"
+      }
+    ],
+    "notice": "건물 내부 벽체 표면 오염 흔적",
+    "imageQuality": {
+      "sufficient": false,
+      "issue": "저조도로 표면 질감이 판독되지 않음"
+    },
+    "needsWiderShot": true,
+    "noticeText": "조명이 확보된 환경에서 재촬영이 필요합니다."
+  }
+]
