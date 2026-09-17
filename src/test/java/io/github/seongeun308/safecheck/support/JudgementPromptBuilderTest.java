@@ -1,6 +1,5 @@
 package io.github.seongeun308.safecheck.support;
 
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
 import io.github.seongeun308.safecheck.domain.InspectionItem;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -11,12 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class JudgementPromptBuilderTest {
 
-    // 프롬프트 조립은 점검항목 목록만 사용하므로, 사례 노출 개수 외의 설정은 비워 둔다.
-    private static final SafecheckProperties PROPERTIES = new SafecheckProperties(
-            null, null, new SafecheckProperties.Judgement(0.5, 3, 3));
-
-    private final DefectCaseRepository repository =
-            new DefectCaseRepository(new ObjectMapper(), PROPERTIES);
+    private final DefectCaseRepository repository = new DefectCaseRepository(new ObjectMapper());
     private final JudgementPromptBuilder builder = new JudgementPromptBuilder(repository);
 
     @Test

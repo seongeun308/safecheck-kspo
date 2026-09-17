@@ -1,6 +1,5 @@
 package io.github.seongeun308.safecheck.repository;
 
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
 import io.github.seongeun308.safecheck.domain.DefectCase;
 import io.github.seongeun308.safecheck.domain.InspectionItem;
 import lombok.extern.slf4j.Slf4j;
@@ -38,12 +37,7 @@ public class DefectCaseRepository {
     private final Map<Integer, List<DefectCase>> casesByItemId;
     private final int totalCaseCount;
 
-    /** 결과 화면에 노출할 항목별 최대 사례 수. safecheck.judgement.case-display-limit */
-    private final int caseDisplayLimit;
-
-    public DefectCaseRepository(ObjectMapper objectMapper, SafecheckProperties properties) {
-        this.caseDisplayLimit = properties.judgement().caseDisplayLimit();
-
+    public DefectCaseRepository(ObjectMapper objectMapper) {
         List<InspectionItem> loadedItems =
                 readJson(objectMapper, ITEMS_PATH, new TypeReference<>() {});
         List<DefectCase> loadedCases =
@@ -139,11 +133,6 @@ public class DefectCaseRepository {
     public List<DefectCase> casesOf(int itemId, int limit) {
         List<DefectCase> all = casesOf(itemId);
         return all.size() <= limit ? all : List.copyOf(all.subList(0, limit));
-    }
-
-    /** 결과 화면 기본 노출용. 노출 개수는 설정값을 따른다. */
-    public List<DefectCase> casesForDisplay(int itemId) {
-        return casesOf(itemId, caseDisplayLimit);
     }
 
     public int totalCaseCount() {
