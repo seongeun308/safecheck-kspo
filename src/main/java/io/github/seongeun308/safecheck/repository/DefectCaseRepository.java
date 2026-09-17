@@ -1,5 +1,6 @@
 package io.github.seongeun308.safecheck.repository;
 
+import io.github.seongeun308.safecheck.config.SafecheckProperties;
 import io.github.seongeun308.safecheck.domain.DefectCase;
 import io.github.seongeun308.safecheck.domain.InspectionItem;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +24,6 @@ public class DefectCaseRepository {
     private static final String ITEMS_PATH = "data/inspection_items.json";
     private static final String CASES_PATH = "data/defect_cases.json";
 
-    /** 결과 화면에 노출할 항목별 최대 사례 수 */
-    private static final int DEFAULT_CASE_LIMIT = 3;
-
     /**
      * 같은 점검항목이라면 해상도가 높은 사례를 먼저 노출한다.
      * 공단 이미지는 총 화소 중앙값이 약 8만(330x248)이고 편차가 크므로,
@@ -40,7 +38,12 @@ public class DefectCaseRepository {
     private final Map<Integer, List<DefectCase>> casesByItemId;
     private final int totalCaseCount;
 
-    public DefectCaseRepository(ObjectMapper objectMapper) {
+    /** 결과 화면에 노출할 항목별 최대 사례 수. safecheck.judgement.case-display-limit */
+    private final int caseDisplayLimit;
+
+    public DefectCaseRepository(ObjectMapper objectMapper, SafecheckProperties properties) {
+        this.caseDisplayLimit = properties.judgement().caseDisplayLimit();
+
         List<InspectionItem> loadedItems =
                 readJson(objectMapper, ITEMS_PATH, new TypeReference<>() {});
         List<DefectCase> loadedCases =
@@ -138,9 +141,9 @@ public class DefectCaseRepository {
         return all.size() <= limit ? all : List.copyOf(all.subList(0, limit));
     }
 
-    /** 결과 화면 기본 노출용. */
+    /** 결과 화면 기본 노출용. 노출 개수는 설정값을 따른다. */
     public List<DefectCase> casesForDisplay(int itemId) {
-        return casesOf(itemId, DEFAULT_CASE_LIMIT);
+        return casesOf(itemId, caseDisplayLimit);
     }
 
     public int totalCaseCount() {
