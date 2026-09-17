@@ -2,9 +2,14 @@ package io.github.seongeun308.safecheck;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-// 실제 키는 배포 환경변수로만 주입한다. 컨텍스트 로딩 확인에는 더미 값으로 충분하다.
-@SpringBootTest(properties = "safecheck.llm.api-key=test-api-key")
+/*
+ * 실제 LLM 클라이언트가 없는 동안에는 mock 프로파일에서만 JudgementClient 빈이 등록된다.
+ * mock에서는 LlmApiKeyValidator도 빠지므로 API 키를 주입할 필요가 없다.
+ */
+@SpringBootTest
+@ActiveProfiles("mock")
 class SafecheckApplicationTests {
 
     @Test
