@@ -31,7 +31,20 @@ public record SafecheckProperties(
             @DefaultValue("0.0") double temperature,
             @DefaultValue("60s") java.time.Duration timeout,
             @DefaultValue("1") int maxRetries
-    ) {}
+    ) {
+        /**
+         * 키 누락은 기동 단계에서 중단시킨다.
+         * 해석되지 않은 자리표시자는 Spring이 오류로 보지 않고 "${LLM_API_KEY}"라는
+         * 문자열을 그대로 넘기므로, 빈 값과 함께 여기서 걸러낸다.
+         * 그러지 않으면 첫 판정 요청에서야 401로 드러난다.
+         */
+        public Llm {
+            if (apiKey == null || apiKey.isBlank() || apiKey.startsWith("${")) {
+                throw new IllegalStateException(
+                        "LLM API 키가 설정되지 않았습니다. 환경변수 LLM_API_KEY를 지정하십시오.");
+            }
+        }
+    }
 
     /**
      * @param maxDimension 장변 기준 리사이즈 크기. 토큰 비용에 직결된다.
