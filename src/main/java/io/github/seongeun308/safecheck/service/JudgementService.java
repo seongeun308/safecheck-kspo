@@ -55,6 +55,13 @@ public class JudgementService {
     }
 
     public JudgementResult judge(byte[] image, String buildingType, String positionType) {
+        if (!repository.getBuildingTypes().contains(buildingType)) {
+            throw new IllegalArgumentException("알 수 없는 건물구분입니다: " + buildingType);
+        }
+        if (!repository.getPositionTypes().contains(positionType)) {
+            throw new IllegalArgumentException("알 수 없는 위치구분입니다: " + positionType);
+        }
+
         ImagePreprocessor.PreparedImage prepared = preprocessor.prepare(image);
 
         JudgementResponse response = client.judge(

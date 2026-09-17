@@ -2,6 +2,7 @@ package io.github.seongeun308.safecheck.repository;
 
 import io.github.seongeun308.safecheck.domain.DefectCase;
 import io.github.seongeun308.safecheck.domain.InspectionItem;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Repository;
@@ -35,7 +36,13 @@ public class DefectCaseRepository {
     private final List<InspectionItem> items;
     private final Map<Integer, InspectionItem> itemById;
     private final Map<Integer, List<DefectCase>> casesByItemId;
+
+    @Getter
     private final int totalCaseCount;
+    @Getter
+    private final List<String> buildingTypes;
+    @Getter
+    private final List<String> positionTypes;
 
     public DefectCaseRepository(ObjectMapper objectMapper) {
         List<InspectionItem> loadedItems =
@@ -53,6 +60,12 @@ public class DefectCaseRepository {
                                 Collectors.toList(),
                                 list -> list.stream().sorted(DISPLAY_ORDER).toList()))));
         this.totalCaseCount = loadedCases.size();
+        this.buildingTypes = loadedCases.stream()
+                .map(DefectCase::buildingType)
+                .distinct().sorted().toList();
+        this.positionTypes = loadedCases.stream()
+                .map(DefectCase::positionType)
+                .distinct().sorted().toList();
 
         verify();
 
@@ -133,9 +146,5 @@ public class DefectCaseRepository {
     public List<DefectCase> casesOf(int itemId, int limit) {
         List<DefectCase> all = casesOf(itemId);
         return all.size() <= limit ? all : List.copyOf(all.subList(0, limit));
-    }
-
-    public int totalCaseCount() {
-        return totalCaseCount;
     }
 }
