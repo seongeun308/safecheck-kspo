@@ -33,6 +33,11 @@ public class DefectCaseRepository {
             Comparator.comparingInt(DefectCase::pixelCount).reversed()
                     .thenComparingInt(DefectCase::seq);
 
+    /**
+     * -- GETTER --
+     * 점검항목 22종 전체. 프롬프트의 분류체계 조립에 사용한다.
+     */
+    @Getter
     private final List<InspectionItem> items;
     private final Map<Integer, InspectionItem> itemById;
     private final Map<Integer, List<DefectCase>> casesByItemId;
@@ -119,11 +124,6 @@ public class DefectCaseRepository {
         if (!empty.isEmpty()) {
             log.warn("참조 사례가 없는 점검항목: {}", empty);
         }
-    }
-
-    /** 점검항목 22종 전체. 프롬프트의 분류체계 조립에 사용한다. */
-    public List<InspectionItem> items() {
-        return items;
     }
 
     public Optional<InspectionItem> findItem(int itemId) {

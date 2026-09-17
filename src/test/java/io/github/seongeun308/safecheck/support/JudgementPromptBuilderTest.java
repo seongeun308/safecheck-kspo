@@ -24,8 +24,8 @@ class JudgementPromptBuilderTest {
     void containsAllInspectionItems() {
         String prompt = builder.systemPrompt();
 
-        assertThat(repository.items()).hasSize(22);
-        for (InspectionItem item : repository.items()) {
+        assertThat(repository.getItems()).hasSize(22);
+        for (InspectionItem item : repository.getItems()) {
             assertThat(prompt)
                     .as("점검항목 %d번(%s)", item.id(), item.shortName())
                     .contains(item.shortName())

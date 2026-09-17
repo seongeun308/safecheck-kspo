@@ -38,7 +38,7 @@ public class JudgementPromptBuilder {
         }
 
         this.systemPrompt = template.replace(
-                ITEMS_PLACEHOLDER, renderItemTable(repository.items()));
+                ITEMS_PLACEHOLDER, renderItemTable(repository.getItems()));
 
         log.info("판정 시스템 프롬프트 조립 완료: {}자", systemPrompt.length());
     }
