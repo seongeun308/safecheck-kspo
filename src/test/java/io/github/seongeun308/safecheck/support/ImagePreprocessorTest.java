@@ -75,13 +75,14 @@ class ImagePreprocessorTest {
     }
 
     @Test
-    @DisplayName("전처리 후 용량이 원본보다 작아진다")
-    void reducesByteSize() {
+    @DisplayName("전처리 후 해상도가 축소된다")
+    void reducesDimension() {
         byte[] original = jpeg(4032, 3024);
 
         var prepared = preprocessor.prepare(original);
 
-        assertThat(prepared.bytes().length).isLessThan(original.length);
+        assertThat(prepared.width()).isLessThan(4032);
+        assertThat(prepared.height()).isLessThan(3024);
     }
 
     // ------------------------------------------------------------------
