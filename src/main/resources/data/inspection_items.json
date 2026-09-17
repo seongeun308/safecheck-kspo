@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "shortName": "균열, 누수",
+    "officialName": "균열, 누수, 침수, 백태",
+    "caseCount": 20
+  },
+  {
+    "id": 2,
+    "shortName": "탈락, 철근노출",
+    "officialName": "콘크리트 탈락, 철근 노출",
+    "caseCount": 20
+  },
+  {
+    "id": 3,
+    "shortName": "철골재 부식",
+    "officialName": "철골재 부식, 도장 탈락 여부",
+    "caseCount": 20
+  },
+  {
+    "id": 4,
+    "shortName": "철골재 휨처짐",
+    "officialName": "철골재(보,바닥 등)의 휨, 처짐, 변형 등의 손상 여부",
+    "caseCount": 10
+  },
+  {
+    "id": 5,
+    "shortName": "철골재 볼트누락",
+    "officialName": "철골재 접합부 볼트 누락 여부",
+    "caseCount": 7
+  },
+  {
+    "id": 6,
+    "shortName": "마감재파손",
+    "officialName": "마감재의 파손(균열, 탈락), 오염, 누수 및 누수, 침수 흔적의 발생 여부",
+    "caseCount": 20
+  },
+  {
+    "id": 7,
+    "shortName": "옥상방수마감",
+    "officialName": "옥상 방수, 마감 등 안전상태",
+    "caseCount": 20
+  },
+  {
+    "id": 8,
+    "shortName": "옥상 과하중",
+    "officialName": "옥상 물탱크·물건 적치 등 과하중 상태",
+    "caseCount": 2
+  },
+  {
+    "id": 9,
+    "shortName": "창호유리",
+    "officialName": "창호 유리의 안전상태",
+    "caseCount": 13
+  },
+  {
+    "id": 10,
+    "shortName": "창호문,방충망",
+    "officialName": "창호(문, 방충망 등)의 안전상태",
+    "caseCount": 12
+  },
+  {
+    "id": 11,
+    "shortName": "난간의 흔들림",
+    "officialName": "난간의 흔들림 및 손상 여부",
+    "caseCount": 18
+  },
+  {
+    "id": 12,
+    "shortName": "미끄럼방지",
+    "officialName": "미끄럼 방지시설, 낙하 및 추락방지 그물 설치 등",
+    "caseCount": 20
+  },
+  {
+    "id": 13,
+    "shortName": "안전시설(방지망)",
+    "officialName": "안전시설(방지망 등) 설치 여부",
+    "caseCount": 7
+  },
+  {
+    "id": 14,
+    "shortName": "통행로",
+    "officialName": "통행로(보행로, 차도) 시설 위험물 및 안전상태",
+    "caseCount": 20
+  },
+  {
+    "id": 15,
+    "shortName": "부대시설",
+    "officialName": "정문, 무대 시설, 파고라, 벤치, 담장 등 시설 결함 상태",
+    "caseCount": 17
+  },
+  {
+    "id": 16,
+    "shortName": "광고간판, 조명",
+    "officialName": "광고간판, 조명, 안내 사인물, 광고탑 등의 파손 여부",
+    "caseCount": 15
+  },
+  {
+    "id": 17,
+    "shortName": "옹벽의균열",
+    "officialName": "옹벽의 균열 또는 파손, 배부름 현상",
+    "caseCount": 10
+  },
+  {
+    "id": 18,
+    "shortName": "경사면",
+    "officialName": "경사면 균열 또는 파손 및 수목의 기울어짐",
+    "caseCount": 1
+  },
+  {
+    "id": 19,
+    "shortName": "부동침하",
+    "officialName": "지반침하 등에 따른 구조물의 위험 여부",
+    "caseCount": 5
+  },
+  {
+    "id": 20,
+    "shortName": "기초",
+    "officialName": "시설물 기초의 세굴 여부",
+    "caseCount": 1
+  },
+  {
+    "id": 21,
+    "shortName": "승강기",
+    "officialName": "정기검사, 안전검사 여부 및 안전검사필증 부착 여부 (엘리베이터, 에스컬레이터, 기계식  주차시설 등)",
+    "caseCount": 6
+  },
+  {
+    "id": 22,
+    "shortName": "보수보강",
+    "officialName": "보수, 보강 등의 조치 상태 등",
+    "caseCount": 1
+  }
+]
