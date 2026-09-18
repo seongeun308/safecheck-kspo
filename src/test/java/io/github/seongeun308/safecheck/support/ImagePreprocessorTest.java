@@ -1,21 +1,17 @@
 package io.github.seongeun308.safecheck.support;
 
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.TestProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Random;
 
+import static io.github.seongeun308.safecheck.TestImages.jpeg;
+import static io.github.seongeun308.safecheck.TestImages.png;
+import static io.github.seongeun308.safecheck.TestImages.transparentPng;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -24,7 +20,7 @@ class ImagePreprocessorTest {
 
     private static final int MAX_DIMENSION = 1024;
 
-    private final ImagePreprocessor preprocessor = preprocessorWith(MAX_DIMENSION, 10);
+    private final ImagePreprocessor preprocessor = new ImagePreprocessor(TestProperties.withImage(1024, 10));
 
     // ------------------------------------------------------------------
     // 리사이즈
@@ -93,7 +89,7 @@ class ImagePreprocessorTest {
     @DisplayName("출력은 항상 JPEG이다")
     void alwaysOutputsJpeg() {
         var fromJpeg = preprocessor.prepare(jpeg(800, 600));
-        var fromPng = preprocessor.prepare(png(800, 600, false));
+        var fromPng = preprocessor.prepare(png(800, 600));
 
         assertThat(fromJpeg.mediaType()).isEqualTo(ImagePreprocessor.JPEG);
         assertThat(fromPng.mediaType()).isEqualTo(ImagePreprocessor.JPEG);
@@ -102,7 +98,7 @@ class ImagePreprocessorTest {
     @Test
     @DisplayName("투명도가 있는 PNG도 변환에 실패하지 않는다")
     void handlesTransparentPng() {
-        byte[] original = png(800, 600, true);
+        byte[] original = transparentPng(800, 600);
 
         var prepared = preprocessor.prepare(original);
 
@@ -179,7 +175,8 @@ class ImagePreprocessorTest {
     @Test
     @DisplayName("허용 용량을 초과하면 거부한다")
     void rejectsOversizedUpload() {
-        ImagePreprocessor limited = preprocessorWith(MAX_DIMENSION, 1);
+        ImagePreprocessor limited = new ImagePreprocessor(TestProperties.withImage(MAX_DIMENSION, 1));
+
         byte[] oversized = new byte[2 * 1024 * 1024];
 
         assertThatThrownBy(() -> limited.prepare(oversized))
@@ -214,53 +211,5 @@ class ImagePreprocessorTest {
         Path out = Path.of("build/tmp/prepared-portrait.jpg");
         Files.createDirectories(out.getParent());
         Files.write(out, prepared.bytes());
-    }
-
-    // ------------------------------------------------------------------
-    // 도우미
-    // ------------------------------------------------------------------
-
-    private static ImagePreprocessor preprocessorWith(int maxDimension, int maxUploadMb) {
-        var properties = new SafecheckProperties(
-                new SafecheckProperties.Llm(
-                        "test-key", "http://localhost", "test-model",
-                        1000, 0.0, java.time.Duration.ofSeconds(60), 1),
-                new SafecheckProperties.Image(maxDimension, maxUploadMb),
-                new SafecheckProperties.Judgement(0.5, 3, 3));
-        return new ImagePreprocessor(properties);
-    }
-
-    /** 단색이면 JPEG가 지나치게 압축되므로 노이즈를 섞어 실제 사진에 가깝게 만든다. */
-    private static byte[] jpeg(int width, int height) {
-        return encode(noiseImage(width, height, false), "jpeg");
-    }
-
-    private static byte[] png(int width, int height, boolean withAlpha) {
-        return encode(noiseImage(width, height, withAlpha), "png");
-    }
-
-    private static BufferedImage noiseImage(int width, int height, boolean withAlpha) {
-        BufferedImage image = new BufferedImage(width, height,
-                withAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
-        Random random = new Random(width * 31L + height);
-        for (int y = 0; y < height; y += 8) {
-            for (int x = 0; x < width; x += 8) {
-                g.setColor(new Color(random.nextInt(0x1000000)));
-                g.fillRect(x, y, 8, 8);
-            }
-        }
-        g.dispose();
-        return image;
-    }
-
-    private static byte[] encode(BufferedImage image, String format) {
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ImageIO.write(image, format, out);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 }
