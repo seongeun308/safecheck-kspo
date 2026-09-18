@@ -13,7 +13,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record SafecheckProperties(
         Llm llm,
         Image image,
-        Judgement judgement
+        Judgement judgement,
+        Cache cache
 ) {
 
     /**
@@ -56,5 +57,15 @@ public record SafecheckProperties(
             @DefaultValue("0.5") double confidenceThreshold,
             @DefaultValue("3") int maxJudgements,
             @DefaultValue("3") int caseDisplayLimit
+    ) {}
+
+    /**
+     * @param maxEntries 넘으면 오래 쓰이지 않은 항목부터 버린다.
+     *                   응답 하나가 1KB 남짓이라 1000건이면 수 MB 수준이다.
+     * @param ttl        공단 데이터가 바뀌지 않으므로 길게 잡아도 무방하다.
+     */
+    public record Cache(
+            @DefaultValue("1000") int maxEntries,
+            @DefaultValue("24h") java.time.Duration ttl
     ) {}
 }

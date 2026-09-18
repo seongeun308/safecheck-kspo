@@ -8,6 +8,7 @@ import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.dto.JudgementResult;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import io.github.seongeun308.safecheck.support.ImagePreprocessor;
+import io.github.seongeun308.safecheck.support.JudgementCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -41,15 +42,18 @@ public class JudgementService {
 
     private final ImagePreprocessor preprocessor;
     private final JudgementClient client;
+    private final JudgementCache cache;
     private final DefectCaseRepository repository;
     private final SafecheckProperties.Judgement config;
 
     public JudgementService(ImagePreprocessor preprocessor,
                             JudgementClient client,
+                            JudgementCache cache,
                             DefectCaseRepository repository,
                             SafecheckProperties properties) {
         this.preprocessor = preprocessor;
         this.client = client;
+        this.cache = cache;
         this.repository = repository;
         this.config = properties.judgement();
     }
@@ -64,8 +68,14 @@ public class JudgementService {
 
         ImagePreprocessor.PreparedImage prepared = preprocessor.prepare(image);
 
-        JudgementResponse response = client.judge(
-                prepared.bytes(), prepared.mediaType(), buildingType, positionType);
+        JudgementResponse response = cache
+                .get(prepared.hash(), buildingType, positionType)
+                .orElseGet(() -> {
+                    JudgementResponse fresh = client.judge(
+                            prepared.bytes(), prepared.mediaType(), buildingType, positionType);
+                    cache.put(prepared.hash(), buildingType, positionType, fresh);
+                    return fresh;
+                });
 
         List<JudgementResult.JudgedItem> judgements = validate(response);
         double topConfidence = judgements.isEmpty() ? 0.0 : judgements.getFirst().confidence();

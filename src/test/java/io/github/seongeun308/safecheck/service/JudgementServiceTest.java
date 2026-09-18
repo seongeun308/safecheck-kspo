@@ -1,5 +1,6 @@
 package io.github.seongeun308.safecheck.service;
 
+import io.github.seongeun308.safecheck.TestProperties;
 import io.github.seongeun308.safecheck.client.JudgementClient;
 import io.github.seongeun308.safecheck.config.SafecheckProperties;
 import io.github.seongeun308.safecheck.domain.DefectCase;
@@ -7,28 +8,19 @@ import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.dto.JudgementResult;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import io.github.seongeun308.safecheck.support.ImagePreprocessor;
-import org.junit.jupiter.api.BeforeEach;
+import io.github.seongeun308.safecheck.support.JudgementCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
-import javax.imageio.ImageIO;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.time.Duration;
 import java.util.List;
-import java.util.Random;
 
+import static io.github.seongeun308.safecheck.TestImages.jpeg;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class JudgementServiceTest {
 
-    private static final double THRESHOLD = 0.5;
     private static final int MAX_JUDGEMENTS = 3;
     private static final int CASE_LIMIT = 3;
 
@@ -42,19 +34,14 @@ class JudgementServiceTest {
     /** 마감재파손 */
     private static final int ITEM_FINISH = 6;
 
-    private final DefectCaseRepository repository = new DefectCaseRepository(new ObjectMapper());
+    private static final SafecheckProperties PROPERTIES = TestProperties.defaults();
+    private static final DefectCaseRepository REPOSITORY = new DefectCaseRepository(new ObjectMapper());
+
     private final StubJudgementClient client = new StubJudgementClient();
-
-    private JudgementService service;
-    private byte[] photo;
-
-    @BeforeEach
-    void setUp() {
-        SafecheckProperties properties = properties();
-        service = new JudgementService(
-                new ImagePreprocessor(properties), client, repository, properties);
-        photo = jpeg(1600, 1200);
-    }
+    private final JudgementCache cache = new JudgementCache(PROPERTIES);
+    private final JudgementService service = new JudgementService(
+            new ImagePreprocessor(PROPERTIES), client, cache, REPOSITORY, PROPERTIES);
+    private final byte[] photo = jpeg(1600, 1200);
 
     // ------------------------------------------------------------------
 
@@ -141,7 +128,7 @@ class JudgementServiceTest {
 
             JudgementResult result = judge();
 
-            var item = repository.findItem(ITEM_CRACK).orElseThrow();
+            var item = REPOSITORY.findItem(ITEM_CRACK).orElseThrow();
             assertThat(result.judgements()).first()
                     .satisfies(judged -> {
                         assertThat(judged.shortName()).isEqualTo(item.shortName());
@@ -210,7 +197,7 @@ class JudgementServiceTest {
 
             JudgementResult result = judge();
 
-            List<String> expected = repository.casesOf(ITEM_CRACK, CASE_LIMIT).stream()
+            List<String> expected = REPOSITORY.casesOf(ITEM_CRACK, CASE_LIMIT).stream()
                     .map(DefectCase::notice)
                     .toList();
             assertThat(result.cases())
@@ -283,21 +270,39 @@ class JudgementServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("캐싱")
+    class Caching {
+
+        @Test
+        @DisplayName("같은 사진을 다시 판정하면 모델을 호출하지 않는다")
+        void reusesCachedResponse() {
+            client.respondWith(response(judgement(ITEM_CRACK, 0.85)).build());
+
+            judge();
+            judge();
+
+            assertThat(client.callCount).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("위치구분이 다르면 다시 판정한다")
+        void judgesAgainForDifferentPosition() {
+            client.respondWith(response(judgement(ITEM_CRACK, 0.85)).build());
+
+            service.judge(photo, BUILDING_TYPE, "난간");
+            service.judge(photo, BUILDING_TYPE, "창호");
+
+            assertThat(client.callCount).isEqualTo(2);
+        }
+    }
+
     // ------------------------------------------------------------------
     // 도우미
     // ------------------------------------------------------------------
 
     private JudgementResult judge() {
         return service.judge(photo, BUILDING_TYPE, POSITION_TYPE);
-    }
-
-    private static SafecheckProperties properties() {
-        return new SafecheckProperties(
-                new SafecheckProperties.Llm(
-                        "test-key", "http://localhost", "test-model",
-                        1000, 0.0, Duration.ofSeconds(60), 1),
-                new SafecheckProperties.Image(1024, 10),
-                new SafecheckProperties.Judgement(THRESHOLD, MAX_JUDGEMENTS, CASE_LIMIT));
     }
 
     private static JudgementResponse.Judgement judgement(int itemId, double confidence) {
@@ -351,6 +356,7 @@ class JudgementServiceTest {
         private String lastMediaType;
         private String lastBuildingType;
         private String lastPositionType;
+        private int callCount;
 
         void respondWith(JudgementResponse response) {
             this.response = response;
@@ -365,31 +371,12 @@ class JudgementServiceTest {
         @Override
         public JudgementResponse judge(byte[] image, String mediaType,
                                        String buildingType, String positionType) {
+            callCount++;
             this.lastImage = image;
             this.lastMediaType = mediaType;
             this.lastBuildingType = buildingType;
             this.lastPositionType = positionType;
             return response;
-        }
-    }
-
-    private static byte[] jpeg(int width, int height) {
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
-        Random random = new Random(width * 31L + height);
-        for (int y = 0; y < height; y += 8) {
-            for (int x = 0; x < width; x += 8) {
-                g.setColor(new Color(random.nextInt(0x1000000)));
-                g.fillRect(x, y, 8, 8);
-            }
-        }
-        g.dispose();
-        try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ImageIO.write(image, "jpeg", out);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 }

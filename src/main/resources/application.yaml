@@ -28,6 +28,10 @@ safecheck:
     max-judgements: 3
     case-display-limit: 3
 
+  cache:
+    max-entries: 1000
+    ttl: 24h
+
 logging:
   level:
     io.github.seongeun308.safecheck: INFO
