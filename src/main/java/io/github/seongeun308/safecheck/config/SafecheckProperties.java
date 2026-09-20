@@ -54,7 +54,7 @@ public record SafecheckProperties(
      * @param caseDisplayLimit    결과 화면에 노출할 공단 사례 수.
      */
     public record Judgement(
-            @DefaultValue("0.5") double confidenceThreshold,
+            @DefaultValue("0.4") double confidenceThreshold,
             @DefaultValue("3") int maxJudgements,
             @DefaultValue("3") int caseDisplayLimit
     ) {}

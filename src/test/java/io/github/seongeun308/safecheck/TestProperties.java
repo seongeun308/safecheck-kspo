@@ -10,7 +10,7 @@ public final class TestProperties {
 
     public static SafecheckProperties defaults() {
         return of(new SafecheckProperties.Image(1024, 10),
-                new SafecheckProperties.Judgement(0.5, 3, 3),
+                new SafecheckProperties.Judgement(0.4, 3, 3),
                 new SafecheckProperties.Cache(1000, Duration.ofMinutes(30)));
     }
 
