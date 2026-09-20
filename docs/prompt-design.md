@@ -215,7 +215,7 @@ if (result.needsWiderShot() || top < 0.5) {
 | 항목 | 값 | 비고 |
 |---|---|---|
 | 이미지 전처리 | 장변 1024px 리사이즈 | 토큰 비용 절감, 판정 품질 유지 |
-| max_tokens | 1000 | JSON 출력에 충분 |
+| max_tokens | 2000 | 실측 출력 428. 판정 3건에 근거가 길어질 여지를 두고 상한을 넓혔다 |
 | temperature | 사용하지 않음 | Sonnet 5에서 지원 중단. 출력 스키마와 응답 캐시로 일관성 확보 |
 | 프롬프트 캐싱 | 적용 | 22개 항목표가 매 호출 반복되므로 효과 큼 |
 
@@ -265,6 +265,7 @@ JudgementResult result = objectMapper.readValue(cleaned, JudgementResult.class);
 - 22개 항목을 6개 대분류로 묶어 2단계 판정 (대분류 → 소분류) 시도
 - 희소 항목(사례 7건 이하)의 판정 정확도 별도 측정
 - 철골 계열 3종, 체육시설 특화 3종 표본 확보 후 재검증 (9/22 촬영 시)
+- 공식 Java SDK(com.anthropic:anthropic-java) 전환 검토. 현재는 RestClient로 직접 호출하며 재시도·사용량 기록·캐시 지시를 직접 제어한다. 스트리밍이나 타입 안전한 응답 처리가 필요해지면 재검토한다.
 
 ### 원문 보존 원칙
 
