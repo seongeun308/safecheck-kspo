@@ -8,6 +8,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 /**
  * 사용자에게 보여줄 오류 응답을 만든다.
@@ -49,6 +50,13 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("IMAGE_TOO_LARGE",
                         "이미지가 너무 큽니다. 조금 작은 사진으로 다시 시도해주세요."));
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPart(MissingServletRequestPartException e) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("INVALID_REQUEST",
+                        "필수 항목이 빠졌습니다: " + e.getRequestPartName()));
     }
 
     /** 판정 모델 호출 실패, 응답 파싱 실패 등. */
