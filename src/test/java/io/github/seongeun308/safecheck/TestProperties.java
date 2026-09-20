@@ -32,7 +32,7 @@ public final class TestProperties {
         return new SafecheckProperties(
                 new SafecheckProperties.Llm(
                         "test-key", "http://localhost", "test-model",
-                        1000, 0.0, Duration.ofSeconds(60), 1),
+                        1000, Duration.ofSeconds(60), 1),
                 image, judgement, cache);
     }
 }
