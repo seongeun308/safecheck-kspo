@@ -31,7 +31,7 @@ public record SafecheckProperties(
             String apiKey,
             @DefaultValue("https://api.anthropic.com/v1/messages") String baseUrl,
             @DefaultValue("claude-sonnet-5") String model,
-            @DefaultValue("1000") int maxTokens,
+            @DefaultValue("2000") int maxTokens,
             @DefaultValue("60s") Duration timeout,
             @DefaultValue("1") int maxRetries
     ) {}

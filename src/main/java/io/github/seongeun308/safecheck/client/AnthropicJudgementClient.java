@@ -3,7 +3,6 @@ package io.github.seongeun308.safecheck.client;
 import io.github.seongeun308.safecheck.config.SafecheckProperties;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.support.JudgementPromptBuilder;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -115,7 +114,7 @@ public class AnthropicJudgementClient implements JudgementClient {
             throw new JudgementFailedException("판정 응답이 비어 있습니다.", null);
         }
 
-        recordUsage(root, System.currentTimeMillis() - started, attempt);
+        recordResponse(root, System.currentTimeMillis() - started, attempt);
 
         String text = extractText(root);
         return parse(text);
@@ -190,12 +189,18 @@ public class AnthropicJudgementClient implements JudgementClient {
      * 호출 횟수와 토큰을 남긴다.
      * 개발 중 의도치 않은 반복 호출을 알아차리고, 운영 비용을 추적하기 위한 것이다.
      */
-    private void recordUsage(JsonNode root, long elapsedMs, int attempt) {
+    private void recordResponse(JsonNode root, long elapsedMs, int attempt) {
         JsonNode usage = root.path("usage");
         long input = usage.path("input_tokens").asLong(0);
         long output = usage.path("output_tokens").asLong(0);
         long cacheRead = usage.path("cache_read_input_tokens").asLong(0);
         long cacheWrite = usage.path("cache_creation_input_tokens").asLong(0);
+        String stopReason = root.path("stop_reason").asString();
+
+        if ("max_tokens".equals(stopReason)) {
+            log.warn("출력이 max_tokens({})에 도달해 잘렸습니다. 상한 조정이 필요합니다.",
+                    config.maxTokens());
+        }
 
         long calls = callCount.incrementAndGet();
         inputTokens.addAndGet(input);
