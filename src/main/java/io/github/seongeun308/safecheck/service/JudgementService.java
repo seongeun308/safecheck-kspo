@@ -1,7 +1,7 @@
 package io.github.seongeun308.safecheck.service;
 
 import io.github.seongeun308.safecheck.client.JudgementClient;
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.config.JudgementProperties;
 import io.github.seongeun308.safecheck.domain.DefectCase;
 import io.github.seongeun308.safecheck.domain.InspectionItem;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
@@ -9,6 +9,7 @@ import io.github.seongeun308.safecheck.dto.JudgementResult;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import io.github.seongeun308.safecheck.support.ImagePreprocessor;
 import io.github.seongeun308.safecheck.support.JudgementCache;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JudgementService {
 
     private static final String GUIDE_WIDER_SHOT = """
@@ -44,19 +46,7 @@ public class JudgementService {
     private final JudgementClient client;
     private final JudgementCache cache;
     private final DefectCaseRepository repository;
-    private final SafecheckProperties.Judgement config;
-
-    public JudgementService(ImagePreprocessor preprocessor,
-                            JudgementClient client,
-                            JudgementCache cache,
-                            DefectCaseRepository repository,
-                            SafecheckProperties properties) {
-        this.preprocessor = preprocessor;
-        this.client = client;
-        this.cache = cache;
-        this.repository = repository;
-        this.config = properties.judgement();
-    }
+    private final JudgementProperties properties;
 
     public JudgementResult judge(byte[] image, String buildingType, String positionType) {
         if (!repository.getBuildingTypes().contains(buildingType)) {
@@ -107,7 +97,7 @@ public class JudgementService {
                 .flatMap(Optional::stream)
                 .sorted(Comparator.comparingDouble(
                         JudgementResult.JudgedItem::confidence).reversed())
-                .limit(config.maxJudgements())
+                .limit(properties.maxJudgements())
                 .toList();
 
         int dropped = response.judgementsOrEmpty().size() - validated.size();
@@ -139,7 +129,7 @@ public class JudgementService {
             return JudgementResult.Status.NO_DEFECT;
         }
         // 모델이 직접 요청했거나, 확신도가 임계에 못 미치면 추가 촬영을 권한다.
-        if (response.needsWiderShot() || topConfidence < config.confidenceThreshold()) {
+        if (response.needsWiderShot() || topConfidence < properties.confidenceThreshold()) {
             return JudgementResult.Status.NEEDS_BETTER_SHOT;
         }
         return JudgementResult.Status.DEFECT_FOUND;
@@ -165,7 +155,7 @@ public class JudgementService {
             return List.of();
         }
         int topItemId = judgements.getFirst().itemId();
-        return repository.casesOf(topItemId, config.caseDisplayLimit()).stream()
+        return repository.casesOf(topItemId, properties.caseDisplayLimit()).stream()
                 .map(JudgementService::toCaseView)
                 .toList();
     }

@@ -115,7 +115,7 @@ class JudgementCacheTest {
     // ------------------------------------------------------------------
 
     private static JudgementCache cache(int maxEntries, Duration ttl) {
-        return new JudgementCache(TestProperties.withCache(maxEntries, ttl));
+        return new JudgementCache(TestProperties.cacheOf(maxEntries, ttl));
     }
 
     private static JudgementResponse response(String notice) {

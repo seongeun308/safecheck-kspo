@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component;
 @Profile("!mock")
 public class LlmApiKeyValidator {
 
-    public LlmApiKeyValidator(SafecheckProperties properties) {
-        String apiKey = properties.llm() == null ? null : properties.llm().apiKey();
+    public LlmApiKeyValidator(LlmProperties properties) {
+        String apiKey = properties == null ? null : properties.apiKey();
 
         if (apiKey == null || apiKey.isBlank() || apiKey.startsWith("${")) {
             throw new IllegalStateException("""

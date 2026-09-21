@@ -2,7 +2,9 @@ package io.github.seongeun308.safecheck.service;
 
 import io.github.seongeun308.safecheck.TestProperties;
 import io.github.seongeun308.safecheck.client.JudgementClient;
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.config.CacheProperties;
+import io.github.seongeun308.safecheck.config.ImageProperties;
+import io.github.seongeun308.safecheck.config.JudgementProperties;
 import io.github.seongeun308.safecheck.domain.DefectCase;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.dto.JudgementResult;
@@ -34,13 +36,21 @@ class JudgementServiceTest {
     /** 마감재파손 */
     private static final int ITEM_FINISH = 6;
 
-    private static final SafecheckProperties PROPERTIES = TestProperties.defaults();
+    private static final ImageProperties IMAGE_PROPERTIES = TestProperties.imageDefaults();
+    private static final CacheProperties CACHE_PROPERTIES = TestProperties.cacheDefaults();
+    private static final JudgementProperties JUDGEMENT_PROPERTIES = TestProperties.judgementDefaults();
+
     private static final DefectCaseRepository REPOSITORY = new DefectCaseRepository(new ObjectMapper());
 
     private final StubJudgementClient client = new StubJudgementClient();
-    private final JudgementCache cache = new JudgementCache(PROPERTIES);
+    private final JudgementCache cache = new JudgementCache(CACHE_PROPERTIES);
     private final JudgementService service = new JudgementService(
-            new ImagePreprocessor(PROPERTIES), client, cache, REPOSITORY, PROPERTIES);
+            new ImagePreprocessor(IMAGE_PROPERTIES),
+            client,
+            cache,
+            REPOSITORY,
+            JUDGEMENT_PROPERTIES
+    );
     private final byte[] photo = jpeg(1600, 1200);
 
     // ------------------------------------------------------------------

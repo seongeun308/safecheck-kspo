@@ -1,7 +1,9 @@
 package io.github.seongeun308.safecheck.support;
 
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.config.CacheProperties;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -27,30 +29,25 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JudgementCache {
 
-    private final Map<String, Entry> store;
-    private final Duration ttl;
-    private final int maxEntries;
+    private final CacheProperties properties;
 
     private final AtomicLong hits = new AtomicLong();
     private final AtomicLong misses = new AtomicLong();
 
-    public JudgementCache(SafecheckProperties properties) {
-        SafecheckProperties.Cache config = properties.cache();
-        this.ttl = config.ttl();
-        this.maxEntries = config.maxEntries();
+    private final Map<String, Entry> store = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Entry> eldest) {
+                    return size() > properties.maxEntries();
+                }
+            });
 
-        // 접근 순서를 유지하는 맵. 한도를 넘으면 가장 오래 쓰이지 않은 항목을 버린다.
-        this.store = Collections.synchronizedMap(
-                new LinkedHashMap<>(16, 0.75f, true) {
-                    @Override
-                    protected boolean removeEldestEntry(Map.Entry<String, Entry> eldest) {
-                        return size() > maxEntries;
-                    }
-                });
-
-        log.info("판정 캐시 설정: 최대 {}건, 유효기간 {}", maxEntries, ttl);
+    @PostConstruct
+    private void init() {
+        log.info("판정 캐시 설정: 최대 {}건, 유효기간 {}", properties.maxEntries(), properties.ttl());
     }
 
     public Optional<JudgementResponse> get(String imageHash, String buildingType, String positionType) {
@@ -61,7 +58,7 @@ public class JudgementCache {
             misses.incrementAndGet();
             return Optional.empty();
         }
-        if (entry.isExpired(ttl)) {
+        if (entry.isExpired(properties.ttl())) {
             store.remove(key);
             misses.incrementAndGet();
             return Optional.empty();

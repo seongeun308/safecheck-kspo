@@ -20,7 +20,7 @@ class ImagePreprocessorTest {
 
     private static final int MAX_DIMENSION = 1024;
 
-    private final ImagePreprocessor preprocessor = new ImagePreprocessor(TestProperties.withImage(1024, 10));
+    private final ImagePreprocessor preprocessor = new ImagePreprocessor(TestProperties.imageOf(1024, 10));
 
     // ------------------------------------------------------------------
     // 리사이즈
@@ -175,7 +175,7 @@ class ImagePreprocessorTest {
     @Test
     @DisplayName("허용 용량을 초과하면 거부한다")
     void rejectsOversizedUpload() {
-        ImagePreprocessor limited = new ImagePreprocessor(TestProperties.withImage(MAX_DIMENSION, 1));
+        ImagePreprocessor limited = new ImagePreprocessor(TestProperties.imageOf(MAX_DIMENSION, 1));
 
         byte[] oversized = new byte[2 * 1024 * 1024];
 

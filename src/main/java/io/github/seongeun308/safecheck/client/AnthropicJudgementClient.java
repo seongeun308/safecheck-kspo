@@ -1,6 +1,6 @@
 package io.github.seongeun308.safecheck.client;
 
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.config.LlmProperties;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.support.JudgementPromptBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +47,7 @@ public class AnthropicJudgementClient implements JudgementClient {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final JudgementPromptBuilder promptBuilder;
-    private final SafecheckProperties.Llm config;
+    private final LlmProperties properties;
 
     private final AtomicLong callCount = new AtomicLong();
     private final AtomicLong inputTokens = new AtomicLong();
@@ -55,19 +55,19 @@ public class AnthropicJudgementClient implements JudgementClient {
 
     public AnthropicJudgementClient(ObjectMapper objectMapper,
                                     JudgementPromptBuilder promptBuilder,
-                                    SafecheckProperties properties) {
-        this.config = properties.llm();
+                                    LlmProperties properties) {
+        this.properties = properties;
         this.objectMapper = objectMapper;
         this.promptBuilder = promptBuilder;
         this.restClient = RestClient.builder()
-                .baseUrl(config.baseUrl())
-                .defaultHeader("x-api-key", config.apiKey())
+                .baseUrl(properties.baseUrl())
+                .defaultHeader("x-api-key", properties.apiKey())
                 .defaultHeader("anthropic-version", ANTHROPIC_VERSION)
                 .defaultHeader("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .requestFactory(requestFactory(config.timeout()))
+                .requestFactory(requestFactory(properties.timeout()))
                 .build();
 
-        log.info("판정 모델 클라이언트 준비: model={}, timeout={}", config.model(), config.timeout());
+        log.info("판정 모델 클라이언트 준비: model={}, timeout={}", properties.model(), properties.timeout());
     }
 
     private static ClientHttpRequestFactory requestFactory(Duration readTimeout) {
@@ -86,7 +86,7 @@ public class AnthropicJudgementClient implements JudgementClient {
         Map<String, Object> body = requestBody(image, mediaType, buildingType, positionType);
 
         RuntimeException lastError = null;
-        for (int attempt = 0; attempt <= config.maxRetries(); attempt++) {
+        for (int attempt = 0; attempt <= properties.maxRetries(); attempt++) {
             try {
                 return callOnce(body, attempt);
             } catch (HttpClientErrorException e) {
@@ -98,7 +98,7 @@ public class AnthropicJudgementClient implements JudgementClient {
             }
         }
         throw new JudgementFailedException(
-                "판정 모델 호출에 실패했습니다. 재시도 %d회 소진.".formatted(config.maxRetries()),
+                "판정 모델 호출에 실패했습니다. 재시도 %d회 소진.".formatted(properties.maxRetries()),
                 lastError);
     }
 
@@ -127,8 +127,8 @@ public class AnthropicJudgementClient implements JudgementClient {
     private Map<String, Object> requestBody(byte[] image, String mediaType,
                                             String buildingType, String positionType) {
         return Map.of(
-                "model", config.model(),
-                "max_tokens", config.maxTokens(),
+                "model", properties.model(),
+                "max_tokens", properties.maxTokens(),
                 "system", List.of(Map.of(
                         "type", "text",
                         "text", promptBuilder.systemPrompt(),
@@ -199,7 +199,7 @@ public class AnthropicJudgementClient implements JudgementClient {
 
         if ("max_tokens".equals(stopReason)) {
             log.warn("출력이 max_tokens({})에 도달해 잘렸습니다. 상한 조정이 필요합니다.",
-                    config.maxTokens());
+                    properties.maxTokens());
         }
 
         long calls = callCount.incrementAndGet();

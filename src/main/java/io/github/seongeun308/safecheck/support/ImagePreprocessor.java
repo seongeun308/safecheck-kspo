@@ -4,7 +4,8 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifIFD0Directory;
-import io.github.seongeun308.safecheck.config.SafecheckProperties;
+import io.github.seongeun308.safecheck.config.ImageProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,7 @@ import java.util.Iterator;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ImagePreprocessor {
 
     public static final String JPEG = "image/jpeg";
@@ -51,11 +53,7 @@ public class ImagePreprocessor {
     private static final String OUTPUT_FORMAT = "jpeg";
     private static final float JPEG_QUALITY = 0.85f;
 
-    private final SafecheckProperties.Image config;
-
-    public ImagePreprocessor(SafecheckProperties properties) {
-        this.config = properties.image();
-    }
+    private final ImageProperties properties;
 
     /**
      * @param original 업로드된 원본 바이트
@@ -66,11 +64,11 @@ public class ImagePreprocessor {
             throw new InvalidImageException("이미지가 비어 있습니다.");
         }
 
-        long maxBytes = (long) config.maxUploadMb() * 1024 * 1024;
+        long maxBytes = (long) properties.maxUploadMb() * 1024 * 1024;
         if (original.length > maxBytes) {
             throw new InvalidImageException(
                     "이미지가 너무 큽니다. 최대 %dMB까지 올릴 수 있습니다."
-                            .formatted(config.maxUploadMb()));
+                            .formatted(properties.maxUploadMb()));
         }
 
         String sourceType = detectMediaType(original);
@@ -81,7 +79,7 @@ public class ImagePreprocessor {
         int originalHeight = image.getHeight();
 
         image = applyExifOrientation(image, original);
-        image = resize(image, config.maxDimension());
+        image = resize(image, properties.maxDimension());
 
         byte[] encoded = encodeJpeg(image);
 
