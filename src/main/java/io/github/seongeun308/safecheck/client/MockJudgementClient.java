@@ -1,8 +1,7 @@
 package io.github.seongeun308.safecheck.client;
 
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -25,9 +24,8 @@ import java.util.List;
  */
 @Profile("mock")
 @Component
+@Slf4j
 public class MockJudgementClient implements JudgementClient {
-
-    private static final Logger log = LoggerFactory.getLogger(MockJudgementClient.class);
 
     private static final String SAMPLES_PATH = "mock/judgement-samples.json";
 

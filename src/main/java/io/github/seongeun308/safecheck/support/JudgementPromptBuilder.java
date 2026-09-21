@@ -2,6 +2,7 @@ package io.github.seongeun308.safecheck.support;
 
 import io.github.seongeun308.safecheck.domain.InspectionItem;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ public class JudgementPromptBuilder {
     private static final String TEMPLATE_PATH = "prompts/judgement-system.txt";
     private static final String ITEMS_PLACEHOLDER = "{{INSPECTION_ITEMS}}";
 
+    @Getter
     private final String systemPrompt;
 
     public JudgementPromptBuilder(DefectCaseRepository repository) {
@@ -41,6 +43,22 @@ public class JudgementPromptBuilder {
                 ITEMS_PLACEHOLDER, renderItemTable(repository.getItems()));
 
         log.info("판정 시스템 프롬프트 조립 완료: {}자", systemPrompt.length());
+    }
+
+    /**
+     * 사용자가 선택한 위치 정보를 담은 메시지.
+     *
+     * <p>건물구분과 위치구분을 함께 주면 판정 후보가 좁혀진다.
+     * 검증에서 "주요구조부인지 비구조부인지 사진만으로 미확정" 유형의
+     * 실패가 반복 관찰되어 필수 입력으로 설계했다.
+     */
+    public String userMessage(String buildingType, String positionType) {
+        return """
+                건물구분: %s
+                위치구분: %s
+
+                위 위치에서 촬영한 사진입니다. 판정하십시오."""
+                .formatted(buildingType, positionType);
     }
 
     private static String readTemplate() {
@@ -69,26 +87,5 @@ public class JudgementPromptBuilder {
               .append(" |\n");
         }
         return sb.toString().stripTrailing();
-    }
-
-    /** 매 요청 동일하다. 프롬프트 캐싱 대상. */
-    public String systemPrompt() {
-        return systemPrompt;
-    }
-
-    /**
-     * 사용자가 선택한 위치 정보를 담은 메시지.
-     *
-     * <p>건물구분과 위치구분을 함께 주면 판정 후보가 좁혀진다.
-     * 검증에서 "주요구조부인지 비구조부인지 사진만으로 미확정" 유형의
-     * 실패가 반복 관찰되어 필수 입력으로 설계했다.
-     */
-    public String userMessage(String buildingType, String positionType) {
-        return """
-                건물구분: %s
-                위치구분: %s
-
-                위 위치에서 촬영한 사진입니다. 판정하십시오."""
-                .formatted(buildingType, positionType);
     }
 }

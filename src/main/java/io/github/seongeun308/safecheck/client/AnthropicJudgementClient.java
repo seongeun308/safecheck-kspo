@@ -110,7 +110,7 @@ public class AnthropicJudgementClient implements JudgementClient {
                 "max_tokens", properties.maxTokens(),
                 "system", List.of(Map.of(
                         "type", "text",
-                        "text", promptBuilder.systemPrompt(),
+                        "text", promptBuilder.getSystemPrompt(),
                         "cache_control", Map.of("type", "ephemeral"))),
                 "messages", List.of(Map.of(
                         "role", "user",

@@ -16,13 +16,13 @@ class JudgementPromptBuilderTest {
     @Test
     @DisplayName("템플릿의 자리표시자가 남김없이 치환된다")
     void replacesAllPlaceholders() {
-        assertThat(builder.systemPrompt()).doesNotContain("{{");
+        assertThat(builder.getSystemPrompt()).doesNotContain("{{");
     }
 
     @Test
     @DisplayName("공단 점검항목 22종이 약칭과 공식 명칭 모두 포함된다")
     void containsAllInspectionItems() {
-        String prompt = builder.systemPrompt();
+        String prompt = builder.getSystemPrompt();
 
         assertThat(repository.getItems()).hasSize(22);
         for (InspectionItem item : repository.getItems()) {
@@ -36,7 +36,7 @@ class JudgementPromptBuilderTest {
     @Test
     @DisplayName("출력 스키마 필드명이 유실되지 않는다")
     void retainsOutputSchemaFields() {
-        assertThat(builder.systemPrompt())
+        assertThat(builder.getSystemPrompt())
                 .contains("defectObserved")
                 .contains("judgements")
                 .contains("confidence")
@@ -48,7 +48,7 @@ class JudgementPromptBuilderTest {
     @Test
     @DisplayName("소견 서술 문법 지시가 유실되지 않는다")
     void retainsNoticeFormatInstruction() {
-        assertThat(builder.systemPrompt()).contains("[위치] [부재] [상태]");
+        assertThat(builder.getSystemPrompt()).contains("[위치] [부재] [상태]");
     }
 
     @Test
