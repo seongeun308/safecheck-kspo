@@ -3,19 +3,16 @@ package io.github.seongeun308.safecheck.client;
 import io.github.seongeun308.safecheck.config.LlmProperties;
 import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import io.github.seongeun308.safecheck.support.JudgementPromptBuilder;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -36,15 +33,13 @@ import java.util.regex.Pattern;
 @Profile("!mock")
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AnthropicJudgementClient implements JudgementClient {
-
-    private static final String ANTHROPIC_VERSION = "2023-06-01";
-    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
     /** 모델이 JSON을 코드펜스로 감싸는 경우가 있다. */
     private static final Pattern CODE_FENCE = Pattern.compile("```(?:json)?\\s*|\\s*```");
 
-    private final RestClient restClient;
+    private final RestClient anthropicRestClient;
     private final ObjectMapper objectMapper;
     private final JudgementPromptBuilder promptBuilder;
     private final LlmProperties properties;
@@ -53,30 +48,10 @@ public class AnthropicJudgementClient implements JudgementClient {
     private final AtomicLong inputTokens = new AtomicLong();
     private final AtomicLong outputTokens = new AtomicLong();
 
-    public AnthropicJudgementClient(ObjectMapper objectMapper,
-                                    JudgementPromptBuilder promptBuilder,
-                                    LlmProperties properties) {
-        this.properties = properties;
-        this.objectMapper = objectMapper;
-        this.promptBuilder = promptBuilder;
-        this.restClient = RestClient.builder()
-                .baseUrl(properties.baseUrl())
-                .defaultHeader("x-api-key", properties.apiKey())
-                .defaultHeader("anthropic-version", ANTHROPIC_VERSION)
-                .defaultHeader("content-type", MediaType.APPLICATION_JSON_VALUE)
-                .requestFactory(requestFactory(properties.timeout()))
-                .build();
-
-        log.info("판정 모델 클라이언트 준비: model={}, timeout={}", properties.model(), properties.timeout());
-    }
-
-    private static ClientHttpRequestFactory requestFactory(Duration readTimeout) {
-        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(
-                HttpClient.newBuilder()
-                        .connectTimeout(CONNECT_TIMEOUT)
-                        .build());
-        factory.setReadTimeout(readTimeout);
-        return factory;
+    @PostConstruct
+    private void init() {
+        log.info("판정 모델 클라이언트 준비: model={}, timeout={}",
+                properties.model(), properties.timeout());
     }
 
     @Override
@@ -102,10 +77,14 @@ public class AnthropicJudgementClient implements JudgementClient {
                 lastError);
     }
 
+    public Usage usage() {
+        return new Usage(callCount.get(), inputTokens.get(), outputTokens.get());
+    }
+
     private JudgementResponse callOnce(Map<String, Object> body, int attempt) {
         long started = System.currentTimeMillis();
 
-        JsonNode root = restClient.post()
+        JsonNode root = anthropicRestClient.post()
                 .body(body)
                 .retrieve()
                 .body(JsonNode.class);
@@ -122,8 +101,8 @@ public class AnthropicJudgementClient implements JudgementClient {
 
     // ------------------------------------------------------------------
     // 요청
-    // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
     private Map<String, Object> requestBody(byte[] image, String mediaType,
                                             String buildingType, String positionType) {
         return Map.of(
@@ -147,8 +126,8 @@ public class AnthropicJudgementClient implements JudgementClient {
 
     // ------------------------------------------------------------------
     // 응답
-    // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
     /** content 배열에서 텍스트 블록만 모은다. */
     private static String extractText(JsonNode root) {
         JsonNode content = root.path("content");
@@ -183,8 +162,8 @@ public class AnthropicJudgementClient implements JudgementClient {
 
     // ------------------------------------------------------------------
     // 사용량 기록
-    // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
     /**
      * 호출 횟수와 토큰을 남긴다.
      * 개발 중 의도치 않은 반복 호출을 알아차리고, 운영 비용을 추적하기 위한 것이다.
@@ -208,10 +187,6 @@ public class AnthropicJudgementClient implements JudgementClient {
 
         log.info("판정 호출 #{} ({}ms, 시도 {}회차) 토큰 입력={} 출력={} 캐시읽기={} 캐시쓰기={}",
                 calls, elapsedMs, attempt + 1, input, output, cacheRead, cacheWrite);
-    }
-
-    public Usage usage() {
-        return new Usage(callCount.get(), inputTokens.get(), outputTokens.get());
     }
 
     public record Usage(long calls, long inputTokens, long outputTokens) {}
