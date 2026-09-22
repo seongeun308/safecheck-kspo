@@ -16,6 +16,9 @@
     --primary: #1c3f56;
     --primary-dark: #12293a;
     --primary-contrast: #ffffff;
+    --accent-bar: #2f7d95;
+    --info-bg: #eaf2f6;
+    --info-border: #b9d4e0;
     --error-bg: #fdecea;
     --error-border: #f3b7b0;
     --error-text: #8a3227;
@@ -219,6 +222,167 @@
     padding: 0;
   }
 
+  /* 판정 중 */
+  .loading-wrap {
+    text-align: center;
+    padding: 48px 16px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 20px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    min-height: 1.5em;
+  }
+
+  .loading-note {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+  }
+
+  /* 결과 화면 */
+  .guidance-banner {
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .judgement-item {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+
+  .judgement-item:last-child { border-bottom: none; }
+
+  .judgement-item.reference {
+    opacity: 0.55;
+  }
+
+  .reference-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-bottom: 6px;
+  }
+
+  .judgement-short {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 2px;
+  }
+
+  .judgement-official {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 10px;
+  }
+
+  .confidence-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .confidence-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: var(--accent-bar);
+    border-radius: 4px;
+  }
+
+  .confidence-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .judgement-evidence {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .notice-box {
+    background: var(--surface);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .notice-box .notice-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+
+  .notice-box .notice-text {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    word-break: keep-all;
+  }
+
+  .copy-btn {
+    background: var(--primary);
+    color: var(--primary-contrast);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .copy-btn.copied { background: #2f7d55; }
+
+  .extra-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: -8px 0 16px;
+  }
+
+  /* 하단 상시 고지 */
+  .disclaimer {
+    background: #eef1f4;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
   @media (min-width: 600px) {
     #app { max-width: 560px; margin: 24px auto; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   }
@@ -280,11 +444,19 @@
       </div>
     </section>
 
-    <!-- 3단계: 판정 중 (다음 커밋에서 구현) -->
-    <section class="step" id="step-loading"></section>
+    <!-- 3단계: 판정 중 -->
+    <section class="step" id="step-loading">
+      <div class="card loading-wrap">
+        <div class="spinner"></div>
+        <div class="loading-message" id="loadingMessage" aria-live="polite">사진 확인 중…</div>
+        <div class="loading-note">보통 5~10초 정도 걸립니다. 창을 닫지 마세요.</div>
+      </div>
+    </section>
 
-    <!-- 4단계: 결과 (다음 커밋에서 구현) -->
-    <section class="step" id="step-result"></section>
+    <!-- 4단계: 결과 -->
+    <section class="step" id="step-result">
+      <div id="resultContent"></div>
+    </section>
   </main>
 </div>
 
@@ -293,12 +465,23 @@
   "use strict";
 
   var MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  var LOADING_MESSAGES = [
+    "사진 확인 중…",
+    "점검항목과 대조 중…",
+    "소견 작성 중…",
+    "공단 사례 찾는 중…"
+  ];
+  var DISCLAIMER_TEXT =
+    "본 판정은 자율안전점검 수행을 보조하기 위한 참고 자료이며, 체육시설법에 따른 " +
+    "정식 안전점검이나 정밀안전진단을 대체하지 않습니다. 구조적 위험이 의심되는 경우 " +
+    "전문 점검기관의 진단을 받으십시오.";
 
   var state = {
     buildingType: "",
     positionType: "",
     file: null,
-    previewUrl: null
+    previewUrl: null,
+    submitting: false
   };
 
   var el = {
@@ -311,7 +494,9 @@
     photoInput: document.getElementById("photoInput"),
     photoError: document.getElementById("photoError"),
     submitBtn: document.getElementById("submitBtn"),
-    backToLocationBtn: document.getElementById("backToLocationBtn")
+    backToLocationBtn: document.getElementById("backToLocationBtn"),
+    loadingMessage: document.getElementById("loadingMessage"),
+    resultContent: document.getElementById("resultContent")
   };
 
   var STEP_LABELS = [
@@ -465,6 +650,222 @@
       '<div class="preview-wrap"><img src="' + state.previewUrl + '" alt="선택한 사진 미리보기"></div>';
     el.submitBtn.disabled = false;
   });
+
+  el.submitBtn.addEventListener("click", submitJudgement);
+
+  // ------------------------------------------------------------------
+  // 3단계: 판정 요청
+  // ------------------------------------------------------------------
+
+  var loadingTimer = null;
+
+  function startLoadingMessages() {
+    var idx = 0;
+    el.loadingMessage.textContent = LOADING_MESSAGES[0];
+    loadingTimer = setInterval(function () {
+      idx = Math.min(idx + 1, LOADING_MESSAGES.length - 1);
+      el.loadingMessage.textContent = LOADING_MESSAGES[idx];
+    }, 3000);
+  }
+
+  function stopLoadingMessages() {
+    if (loadingTimer) {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+    }
+  }
+
+  function submitJudgement() {
+    if (state.submitting || !state.file) { return; }
+    state.submitting = true;
+    el.submitBtn.disabled = true;
+    clearGlobalError();
+
+    var form = new FormData();
+    form.append("image", state.file);
+    form.append("buildingType", state.buildingType);
+    form.append("positionType", state.positionType);
+
+    showStep("step-loading");
+    startLoadingMessages();
+
+    fetch("/api/judgements", { method: "POST", body: form })
+      .then(function (res) {
+        return res.json().then(function (body) {
+          return { ok: res.ok, body: body };
+        }).catch(function () {
+          return { ok: res.ok, body: null };
+        });
+      })
+      .then(function (result) {
+        stopLoadingMessages();
+        state.submitting = false;
+        el.submitBtn.disabled = false;
+
+        if (!result.ok) {
+          var message = (result.body && result.body.message) ||
+            "판정에 실패했습니다. 잠시 후 다시 시도해주세요.";
+          showStep("step-photo");
+          showGlobalError(message);
+          return;
+        }
+        renderResult(result.body);
+        showStep("step-result");
+      })
+      .catch(function () {
+        stopLoadingMessages();
+        state.submitting = false;
+        el.submitBtn.disabled = false;
+        showStep("step-photo");
+        showGlobalError("네트워크 오류로 판정에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      });
+  }
+
+  // ------------------------------------------------------------------
+  // 4단계: 결과 렌더링
+  // ------------------------------------------------------------------
+
+  function renderResult(result) {
+    if (result.status === "DEFECT_FOUND") {
+      el.resultContent.innerHTML = renderDefectFound(result);
+    } else if (result.status === "NEEDS_BETTER_SHOT") {
+      el.resultContent.innerHTML = renderNeedsBetterShot(result);
+    } else {
+      el.resultContent.innerHTML = renderNoDefect(result);
+    }
+    bindResultActions(result);
+  }
+
+  function renderDefectFound(result) {
+    var items = (result.judgements || []).slice(0, 3).map(renderJudgementItem).join("");
+    var guidance = result.guidance
+      ? '<p class="extra-note">' + escapeHtml(result.guidance) + "</p>" : "";
+    return (
+      '<div class="card">' +
+        '<h2 class="section-title">판정 결과</h2>' +
+        '<div>' + items + '</div>' +
+      '</div>' +
+      '<div class="notice-box">' +
+        '<div class="notice-label">점검 소견 초안</div>' +
+        '<div class="notice-text" id="noticeText">' + escapeHtml(result.notice || "") + '</div>' +
+        '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
+      '</div>' +
+      guidance +
+      renderDisclaimer() +
+      '<button class="btn btn-primary" id="newCheckBtn" style="margin-top:4px;">새 점검 시작</button>'
+    );
+  }
+
+  function renderNeedsBetterShot(result) {
+    var items = (result.judgements || []).slice(0, 3).map(function (j) {
+      return renderJudgementItem(j, true);
+    }).join("");
+    return (
+      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>' +
+      '<div class="card">' +
+        '<h2 class="section-title">참고 판정</h2>' +
+        '<div>' + items + '</div>' +
+      '</div>' +
+      renderDisclaimer() +
+      '<button class="btn btn-primary" id="retakeBtn" style="margin-top:4px;">다시 촬영하기</button>' +
+      '<button class="btn btn-text" id="newCheckBtn2" style="width:100%;">새 점검부터 시작</button>'
+    );
+  }
+
+  function renderNoDefect(result) {
+    return (
+      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>' +
+      renderDisclaimer() +
+      '<button class="btn btn-primary" id="newCheckBtn" style="margin-top:4px;">새 점검 시작</button>'
+    );
+  }
+
+  function renderJudgementItem(j, faded) {
+    var pct = Math.round((j.confidence || 0) * 100);
+    return (
+      '<div class="judgement-item' + (faded ? " reference" : "") + '">' +
+        (faded ? '<div class="reference-tag">참고</div>' : "") +
+        '<p class="judgement-short">' + escapeHtml(j.shortName) + '</p>' +
+        '<p class="judgement-official">' + escapeHtml(j.officialName) + '</p>' +
+        '<div class="confidence-row">' +
+          '<div class="confidence-track"><div class="confidence-fill" style="width:' + pct + '%;"></div></div>' +
+          '<span class="confidence-label">확신도 ' + pct + '%</span>' +
+        '</div>' +
+        '<p class="judgement-evidence">' + escapeHtml(j.evidence || "") + '</p>' +
+      '</div>'
+    );
+  }
+
+  function renderDisclaimer() {
+    return '<div class="disclaimer">' + escapeHtml(DISCLAIMER_TEXT) + '</div>';
+  }
+
+  function bindResultActions(result) {
+    var newCheckBtn = document.getElementById("newCheckBtn") || document.getElementById("newCheckBtn2");
+    if (newCheckBtn) {
+      newCheckBtn.addEventListener("click", resetToLocation);
+    }
+    var newCheckBtn2 = document.getElementById("newCheckBtn2");
+    if (newCheckBtn2 && newCheckBtn2 !== newCheckBtn) {
+      newCheckBtn2.addEventListener("click", resetToLocation);
+    }
+
+    var retakeBtn = document.getElementById("retakeBtn");
+    if (retakeBtn) {
+      retakeBtn.addEventListener("click", function () {
+        resetPhoto();
+        showStep("step-photo");
+      });
+    }
+
+    var copyBtn = document.getElementById("copyNoticeBtn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", function () {
+        copyToClipboard(result.notice || "", copyBtn);
+      });
+    }
+  }
+
+  function copyToClipboard(text, btn) {
+    var done = function () {
+      var original = btn.textContent;
+      btn.textContent = "복사됨";
+      btn.classList.add("copied");
+      setTimeout(function () {
+        btn.textContent = original;
+        btn.classList.remove("copied");
+      }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () {
+        fallbackCopy(text, done);
+      });
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* noop */ }
+    document.body.removeChild(ta);
+    done();
+  }
+
+  function resetToLocation() {
+    state.buildingType = "";
+    state.positionType = "";
+    el.buildingType.value = "";
+    el.positionType.value = "";
+    checkLocationReady();
+    resetPhoto();
+    showStep("step-location");
+  }
 
   // ------------------------------------------------------------------
 
