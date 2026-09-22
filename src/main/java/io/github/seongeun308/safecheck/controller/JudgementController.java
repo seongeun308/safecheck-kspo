@@ -46,11 +46,10 @@ public class JudgementController {
             @RequestParam("positionType") String positionType,
             HttpServletRequest request) {
 
-        String clientKey = ClientIpResolver.resolve(request);
+        String ip = ClientIpResolver.resolve(request);
+        String clientKey = ClientIpResolver.rateLimitKey(ip);
 
-        log.info("주소 판별 확인: resolved={}, xff={}",
-                mask(ClientIpResolver.resolve(request)),
-                request.getHeader("X-Forwarded-For") == null ? "없음" : "있음");
+        log.debug("주소 판별: resolved={}, key={}", ClientIpResolver.mask(ip), clientKey);
 
         log.info("판정 요청: {}바이트, 건물구분={}, 위치구분={}",
         image.getSize(), buildingType, positionType);
@@ -81,9 +80,4 @@ public class JudgementController {
     }
 
     public record LocationOptions(List<String> buildingTypes, List<String> positionTypes) {}
-
-    private static String mask(String ip) {
-        int cut = ip.lastIndexOf('.');
-        return cut > 0 ? ip.substring(0, cut) + ".*" : "***";
-    }
 }
