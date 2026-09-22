@@ -5,6 +5,7 @@ import io.github.seongeun308.safecheck.support.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -71,6 +72,15 @@ public class ApiExceptionHandler {
     /** 판정 모델 호출 실패, 응답 파싱 실패 등. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception e) {
+        // 404, 405, 415 등 스프링이 상태를 아는 요청 오류는 그대로 돌려준다
+        if (e instanceof org.springframework.web.ErrorResponse known
+                && known.getStatusCode().is4xxClientError()) {
+            HttpStatusCode status = known.getStatusCode();
+            log.debug("요청 오류 {}: {}", status.value(), e.getMessage());
+            return ResponseEntity.status(status)
+                    .body(new ErrorResponse("REQUEST_ERROR", "요청을 처리할 수 없습니다."));
+        }
+
         log.error("판정 처리 중 오류", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("JUDGEMENT_FAILED",
