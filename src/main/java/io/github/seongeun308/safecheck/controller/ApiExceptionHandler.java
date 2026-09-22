@@ -1,7 +1,9 @@
 package io.github.seongeun308.safecheck.controller;
 
 import io.github.seongeun308.safecheck.support.ImagePreprocessor;
+import io.github.seongeun308.safecheck.support.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -57,6 +59,13 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("INVALID_REQUEST",
                         "필수 항목이 빠졌습니다: " + e.getRequestPartName()));
+    }
+
+    @ExceptionHandler(RateLimiter.RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(RateLimiter.RateLimitExceededException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.retryAfter().toSeconds()))
+                .body(new ErrorResponse("RATE_LIMITED", e.getMessage()));
     }
 
     /** 판정 모델 호출 실패, 응답 파싱 실패 등. */

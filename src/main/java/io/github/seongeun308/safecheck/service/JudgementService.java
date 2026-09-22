@@ -9,6 +9,7 @@ import io.github.seongeun308.safecheck.dto.JudgementResult;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import io.github.seongeun308.safecheck.support.ImagePreprocessor;
 import io.github.seongeun308.safecheck.support.JudgementCache;
+import io.github.seongeun308.safecheck.support.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,8 +48,9 @@ public class JudgementService {
     private final JudgementCache cache;
     private final DefectCaseRepository repository;
     private final JudgementProperties properties;
+    private final RateLimiter rateLimiter;
 
-    public JudgementResult judge(byte[] image, String buildingType, String positionType) {
+    public JudgementResult judge(byte[] image, String buildingType, String positionType, String clientKey) {
         if (!repository.getBuildingTypes().contains(buildingType)) {
             throw new IllegalArgumentException("알 수 없는 건물구분입니다: " + buildingType);
         }
@@ -61,6 +63,7 @@ public class JudgementService {
         JudgementResponse response = cache
                 .get(prepared.hash(), buildingType, positionType)
                 .orElseGet(() -> {
+                    rateLimiter.acquire(clientKey);
                     JudgementResponse fresh = client.judge(
                             prepared.bytes(), prepared.mediaType(), buildingType, positionType);
                     cache.put(prepared.hash(), buildingType, positionType, fresh);

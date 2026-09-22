@@ -33,6 +33,10 @@ safecheck:
     max-entries: 1000
     ttl: 24h
 
+  rate-limit:
+    per-client-hourly: 20
+    daily-total: 300
+
 logging:
   level:
     io.github.seongeun308.safecheck: INFO

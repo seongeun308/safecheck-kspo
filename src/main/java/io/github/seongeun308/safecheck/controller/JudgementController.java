@@ -4,6 +4,8 @@ import io.github.seongeun308.safecheck.domain.InspectionItem;
 import io.github.seongeun308.safecheck.dto.JudgementResult;
 import io.github.seongeun308.safecheck.repository.DefectCaseRepository;
 import io.github.seongeun308.safecheck.service.JudgementService;
+import io.github.seongeun308.safecheck.support.ClientIpResolver;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -41,12 +43,15 @@ public class JudgementController {
     public JudgementResult judge(
             @RequestParam("image") MultipartFile image,
             @RequestParam("buildingType") String buildingType,
-            @RequestParam("positionType") String positionType) {
+            @RequestParam("positionType") String positionType,
+            HttpServletRequest request) {
+
+        String clientKey = ClientIpResolver.resolve(request);
 
         log.info("판정 요청: {}바이트, 건물구분={}, 위치구분={}",
                 image.getSize(), buildingType, positionType);
 
-        return judgementService.judge(readBytes(image), buildingType, positionType);
+        return judgementService.judge(readBytes(image), buildingType, positionType, clientKey);
     }
 
     /** 입력 폼에 쓸 건물구분·위치구분 목록. 공단 데이터에 실재하는 값만 내린다. */

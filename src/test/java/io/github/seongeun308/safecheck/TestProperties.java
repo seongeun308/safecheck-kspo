@@ -55,4 +55,12 @@ public final class TestProperties {
                 1
         );
     }
+
+    public static RateLimitProperties rateLimitDefaults() {
+        return new RateLimitProperties(20, 300);
+    }
+
+    public static RateLimitProperties rateLimitOf(int perClientHourly, int dailyTotal) {
+        return new RateLimitProperties(perClientHourly, dailyTotal);
+    }
 }
