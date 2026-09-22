@@ -26,7 +26,8 @@ public record GradeStats(
 
     /** 수집부터 집계까지 몇 건이 남았는지. 모집단 설명에 쓴다. */
     public record Filter(String facilityStatus, int fetched, int active,
-                         int activeWithoutGrade, int included) {}
+                         int activeWithoutGrade, int included,
+                         int activeSelfInspectionTarget) {}
 
     /** 01 양호, 02 주의, 03 사용중지 */
     public record Grade(String code, String name) {}
@@ -41,7 +42,8 @@ public record GradeStats(
                         Map<String, Integer> counts, List<BusinessType> types) {}
 
     /** 업종(fcob_nm)별 분포. 체력단련장업, 체육관 등. */
-    public record BusinessType(String name, int total, Map<String, Integer> counts) {}
+    public record BusinessType(String name, int total, Map<String, Integer> counts,
+                               int selfInspectionTarget) {}
 
     /** 점검 연도 분포. 기재 오류(미래 연도 등)는 invalid로 따로 센다. */
     public record InspectionYears(String min, String max,

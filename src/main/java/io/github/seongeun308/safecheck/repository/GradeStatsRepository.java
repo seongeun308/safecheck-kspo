@@ -32,10 +32,11 @@ public class GradeStatsRepository {
     public GradeStatsRepository(ObjectMapper objectMapper) {
         this.stats = read(objectMapper);
         verify(stats);
-        log.info("안전점검 등급 분포 적재: 구분 {}종, 업종 {}종, 시설 {}개소 (수집일 {})",
+        log.info("안전점검 등급 분포 적재: 구분 {}종, 업종 {}종, 시설 {}개소, 자율점검 대상 {}개소 (수집일 {})",
                 stats.byGroup().size(),
                 stats.byGroup().stream().mapToInt(g -> g.types().size()).sum(),
                 stats.overall().total(),
+                stats.filter().activeSelfInspectionTarget(),
                 stats.source().fetchedAt());
     }
 
@@ -60,6 +61,8 @@ public class GradeStatsRepository {
      *   <li>구분마다 업종 합계 = 구분 총계 (등급별로도 일치)
      *   <li>구분 총계의 합 = 전체 = 집계 대상 수
      *   <li>구분 이름은 전체에서, 업종 이름은 같은 구분 안에서 중복 없음
+     *   <li>업종별 자율점검 대상 수는 0 이상, 업종 총계 이하
+     *   <li>업종별 자율점검 대상 합계는 정상운영 기준 자율점검 대상 수 이하
      * </ul>
      */
     private static void verify(GradeStats s) {
@@ -97,6 +100,16 @@ public class GradeStatsRepository {
                     "전체(%d)가 집계 대상 수(%d)와 다릅니다."
                             .formatted(s.overall().total(), s.filter().included()));
         }
+
+        int targetsInTypes = s.byGroup().stream()
+                .flatMap(g -> g.types().stream())
+                .mapToInt(GradeStats.BusinessType::selfInspectionTarget)
+                .sum();
+        if (targetsInTypes > s.filter().activeSelfInspectionTarget()) {
+            throw new IllegalStateException(
+                    "업종별 자율점검 대상 합계(%d)가 정상운영 기준 대상 수(%d)보다 큽니다."
+                            .formatted(targetsInTypes, s.filter().activeSelfInspectionTarget()));
+        }
     }
 
     private static void verifyGroup(GradeStats.Group g, Set<String> codes) {
@@ -112,6 +125,12 @@ public class GradeStatsRepository {
         int sumOfTypes = 0;
 
         for (GradeStats.BusinessType t : g.types()) {
+            if (t.selfInspectionTarget() < 0 || t.selfInspectionTarget() > t.total()) {
+                throw new IllegalStateException(
+                        "%s %s: 자율점검 대상 수(%d)가 범위를 벗어났습니다."
+                                .formatted(label, t.name(), t.selfInspectionTarget()));
+            }
+
             // 구분이 다르면 같은 이름이 정상(인공암벽장업). 같은 구분 안에서만 검사한다.
             if (!typeNames.add(t.name())) {
                 throw new IllegalStateException(label + ": 업종이 중복되었습니다: " + t.name());

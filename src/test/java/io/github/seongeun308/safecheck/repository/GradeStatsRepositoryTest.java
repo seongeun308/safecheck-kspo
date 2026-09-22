@@ -102,4 +102,17 @@ class GradeStatsRepositoryTest {
         assertThat(stats.inspectionYears().max())
                 .isLessThanOrEqualTo(stats.source().fetchedAt().substring(0, 4));
     }
+
+    @Test
+    @DisplayName("자율점검 대상은 신고업에만 있다")
+    void selfInspectionTargetsAreOnlyInReportedBusinesses() {
+        for (GradeStats.Group g : REPOSITORY.stats().byGroup()) {
+            int targets = g.types().stream().mapToInt(GradeStats.BusinessType::selfInspectionTarget).sum();
+            if (g.name().equals("신고업")) {
+                assertThat(targets).as(g.label()).isPositive();
+            } else {
+                assertThat(targets).as(g.label()).isZero();
+            }
+        }
+    }
 }
