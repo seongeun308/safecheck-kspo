@@ -372,6 +372,40 @@
     margin: -8px 0 16px;
   }
 
+  /* 공단 점검 사례 */
+  .case-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .case-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .case-item img {
+    width: 88px;
+    height: 66px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .case-notice {
+    font-size: 0.9rem;
+    margin: 0 0 4px;
+    word-break: keep-all;
+  }
+
+  .case-date {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    margin: 0;
+  }
+
   /* 하단 상시 고지 */
   .disclaimer {
     background: #eef1f4;
@@ -381,6 +415,26 @@
     font-size: 0.78rem;
     color: var(--text-muted);
     line-height: 1.6;
+  }
+
+  /* 이미지 원본 뷰어 */
+  .image-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 50;
+  }
+
+  .image-modal.open { display: flex; }
+
+  .image-modal img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
   }
 
   @media (min-width: 600px) {
@@ -460,6 +514,10 @@
   </main>
 </div>
 
+<div class="image-modal" id="imageModal">
+  <img id="imageModalImg" src="" alt="공단 점검 사례 원본">
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -496,7 +554,9 @@
     submitBtn: document.getElementById("submitBtn"),
     backToLocationBtn: document.getElementById("backToLocationBtn"),
     loadingMessage: document.getElementById("loadingMessage"),
-    resultContent: document.getElementById("resultContent")
+    resultContent: document.getElementById("resultContent"),
+    imageModal: document.getElementById("imageModal"),
+    imageModalImg: document.getElementById("imageModalImg")
   };
 
   var STEP_LABELS = [
@@ -751,6 +811,7 @@
         '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
       '</div>' +
       guidance +
+      renderCases(result.cases) +
       renderDisclaimer() +
       '<button class="btn btn-primary" id="newCheckBtn" style="margin-top:4px;">새 점검 시작</button>'
     );
@@ -766,6 +827,7 @@
         '<h2 class="section-title">참고 판정</h2>' +
         '<div>' + items + '</div>' +
       '</div>' +
+      renderCases(result.cases) +
       renderDisclaimer() +
       '<button class="btn btn-primary" id="retakeBtn" style="margin-top:4px;">다시 촬영하기</button>' +
       '<button class="btn btn-text" id="newCheckBtn2" style="width:100%;">새 점검부터 시작</button>'
@@ -796,6 +858,33 @@
     );
   }
 
+  function renderCases(cases) {
+    if (!cases || cases.length === 0) { return ""; }
+    var items = cases.map(function (c, i) {
+      return (
+        '<div class="case-item">' +
+          '<img src="' + escapeHtml(c.imageUrl) + '" alt="공단 점검 사례 사진" ' +
+               'class="case-thumb" data-full="' + escapeHtml(c.imageUrl) + '">' +
+          '<div>' +
+            '<p class="case-notice">' + escapeHtml(c.notice) + '</p>' +
+            '<p class="case-date">점검일 ' + formatDate(c.inspectedOn) + '</p>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+    return (
+      '<div class="card">' +
+        '<h2 class="section-title">공단 점검 사례</h2>' +
+        '<div class="case-list">' + items + '</div>' +
+      '</div>'
+    );
+  }
+
+  function formatDate(iso) {
+    if (!iso) { return ""; }
+    return iso.replace(/-/g, ".");
+  }
+
   function renderDisclaimer() {
     return '<div class="disclaimer">' + escapeHtml(DISCLAIMER_TEXT) + '</div>';
   }
@@ -824,6 +913,13 @@
         copyToClipboard(result.notice || "", copyBtn);
       });
     }
+
+    var thumbs = el.resultContent.querySelectorAll(".case-thumb");
+    thumbs.forEach(function (img) {
+      img.addEventListener("click", function () {
+        openImageModal(img.getAttribute("data-full"));
+      });
+    });
   }
 
   function copyToClipboard(text, btn) {
@@ -866,6 +962,25 @@
     resetPhoto();
     showStep("step-location");
   }
+
+  // ------------------------------------------------------------------
+  // 사례 원본 뷰어
+  // ------------------------------------------------------------------
+
+  function openImageModal(src) {
+    el.imageModalImg.src = src;
+    el.imageModal.classList.add("open");
+  }
+
+  function closeImageModal() {
+    el.imageModal.classList.remove("open");
+    el.imageModalImg.src = "";
+  }
+
+  el.imageModal.addEventListener("click", closeImageModal);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeImageModal(); }
+  });
 
   // ------------------------------------------------------------------
 
