@@ -37,6 +37,7 @@ SLEEP_SEC = 0.2
 RETRIES = 3
 
 ACTIVE_STATUS = "정상운영"
+MIN_YEAR = 2000   # 앞자리 오타(1019 등)를 걸러내기 위한 하한. 실제 최소는 2019
 
 # 공단 등급 체계. 수집한 데이터의 코드-명칭 쌍이 이와 다르면 중단한다.
 EXPECTED_GRADES = {"01": "양호", "02": "주의", "03": "사용중지"}
@@ -148,10 +149,16 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
         name = (r.get("fcob_nm") or "").strip() or "(업종 미기재)"
         by_type[name][r["schk_tot_grd_cd"].strip()] += 1
 
-    years = collections.Counter(
-        str(r.get("schk_visit_ymd") or "")[:4] for r in graded if r.get("schk_visit_ymd")
-    )
-    valid_years = sorted(y for y in years if y.isdigit())
+    # 점검 연도: 기재 오류는 고치지 않고 따로 센다. 등급 분포에는 그대로 포함한다.
+    fetched_year = int(fetched_at[:4]) if fetched_at[:4].isdigit() else dt.date.today().year
+    valid_years, invalid_years = collections.Counter(), collections.Counter()
+    for r in graded:
+        y = str(r.get("schk_visit_ymd") or "")[:4]
+        if y.isdigit() and MIN_YEAR <= int(y) <= fetched_year:
+            valid_years[y] += 1
+        else:
+            invalid_years[y or "(없음)"] += 1
+    ordered = sorted(valid_years)
 
     return {
         "source": {
@@ -174,11 +181,12 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
             key=lambda x: -x["total"],
         ),
         "inspectionYears": {
-            "min": valid_years[0] if valid_years else None,
-            "max": valid_years[-1] if valid_years else None,
-            "counts": {y: years[y] for y in valid_years},
+            "min": ordered[0] if ordered else None,
+            "max": ordered[-1] if ordered else None,
+            "counts": {y: valid_years[y] for y in ordered},
+            "invalid": sum(invalid_years.values()),
         },
-        "_report": {"statusCounts": dict(status)},
+        "_report": {"statusCounts": dict(status), "invalidYears": dict(invalid_years)},
     }
 
 
@@ -225,6 +233,8 @@ def report(stats: dict) -> None:
     print(f"\n=== 점검 연도 {y['min']}~{y['max']} ===")
     for year, n in y["counts"].items():
         print(f"  {year}: {n:,}")
+
+    print(f"  기재 오류로 제외: {y['invalid']}건 {stats['_report']['invalidYears']}")
 
 
 def _print_dist(label: str, d: dict) -> None:
