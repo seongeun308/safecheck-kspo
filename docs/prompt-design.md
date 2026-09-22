@@ -244,6 +244,7 @@ JudgementResult result = objectMapper.readValue(cleaned, JudgementResult.class);
 | 2026-09-14 | 직접 촬영 8장 판정 | 적합 5 / 보완필요 3, 최고 확신도 0.85 |
 | 2026-09-14 | 공단 이미지 3장 판정 | 적합 0 / 보완필요 3, 화질 제약 확인 |
 | 2026-09-20 | API 실연동 첫 호출 | 다중 라벨 3건, needsWiderShot 작동 |
+| 2026-09-22 | 아이폰 Safari 실기기 업로드 (보관함 선택, 카메라 촬영) | iOS가 JPEG로 변환해 전송. HEIC 별도 대응 불필요 |
 
 ## 실측 (2026-09-20)
 
