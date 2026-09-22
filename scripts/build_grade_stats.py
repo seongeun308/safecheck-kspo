@@ -7,9 +7,7 @@
 
 사용법
     # 1) API에서 새로 수집 (원본은 data/raw/에 저장)
-    export DATA_GO_KR_KEY='디코딩된 인증키'
-    export KSPO_SAFETY_URL='체육시설안전정보 오퍼레이션 요청 주소'
-    python3 scripts/build_grade_stats.py
+    프로젝트 루트 .env에 DATA_GO_KR_KEY, KSPO_SAFETY_URL을 둔다
 
     # 2) 이미 받은 원본으로 다시 집계 (인증키 불필요)
     python3 scripts/build_grade_stats.py --from-raw data/raw/facility_safety_20260922.json
