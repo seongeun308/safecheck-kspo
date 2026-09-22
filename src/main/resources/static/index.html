@@ -706,12 +706,24 @@
     }
 
     el.photoError.style.display = "none";
-    state.file = file;
-    if (state.previewUrl) { URL.revokeObjectURL(state.previewUrl); }
-    state.previewUrl = URL.createObjectURL(file);
-    el.previewArea.innerHTML =
-      '<div class="preview-wrap"><img src="' + state.previewUrl + '" alt="선택한 사진 미리보기"></div>';
-    el.submitBtn.disabled = false;
+    el.submitBtn.disabled = true;
+
+    // macOS "사진" 라이브러리로 고른 파일은 보안 스코프 접근 권한이 걸려 있어,
+    // 시간이 지나 제출 시점에 다시 읽으려 하면 권한이 만료되어 빈 요청이
+    // 나가는 사례가 있다. 선택 즉시 바이트를 메모리로 읽어 일반 File로
+    // 만들어 두면 이후 OS 파일 접근 없이 그 값 하나만 쓰게 된다.
+    file.arrayBuffer().then(function (buffer) {
+      state.file = new File([buffer], "photo.jpg", { type: file.type || "image/jpeg" });
+      if (state.previewUrl) { URL.revokeObjectURL(state.previewUrl); }
+      state.previewUrl = URL.createObjectURL(state.file);
+      el.previewArea.innerHTML =
+        '<div class="preview-wrap"><img src="' + state.previewUrl + '" alt="선택한 사진 미리보기"></div>';
+      el.submitBtn.disabled = false;
+    }).catch(function () {
+      el.photoError.textContent = "사진을 불러오지 못했습니다. 다시 선택해주세요.";
+      el.photoError.style.display = "block";
+      state.file = null;
+    });
   });
 
   el.submitBtn.addEventListener("click", submitJudgement);
@@ -739,7 +751,17 @@
   }
 
   function submitJudgement() {
-    if (state.submitting || !state.file) { return; }
+    if (state.submitting) { return; }
+
+    // 아이폰에서 사진 보관함 사진이 iCloud에서 아직 내려받히지 않은 경우
+    // change 이벤트는 발생하지만 File 크기가 0으로 잡히는 경우가 있다.
+    // 그대로 보내면 서버가 빈 이미지로 거부하므로, 요청 전에 걸러 안내한다.
+    if (!state.file || state.file.size === 0) {
+      el.photoError.textContent = "선택한 사진을 불러오지 못했습니다. 사진을 다시 선택해주세요.";
+      el.photoError.style.display = "block";
+      return;
+    }
+
     state.submitting = true;
     el.submitBtn.disabled = true;
     clearGlobalError();
