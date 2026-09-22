@@ -132,6 +132,8 @@ def _items(body: dict) -> list[dict]:
 # 집계
 # ----------------------------------------------------------------------
 
+# 업종별 값은 등급 분포와 같은 모집단(등급 공개 시설)으로 센다.
+# 보고서용 전체 수는 filter.activeSelfInspectionTarget(정상운영 기준)을 쓴다.
 def aggregate(rows: list[dict], fetched_at: str) -> dict:
     status = collections.Counter((r.get("faci_stat_nm") or "(없음)") for r in rows)
     active = [r for r in rows if r.get("faci_stat_nm") == ACTIVE_STATUS]
@@ -148,12 +150,14 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
 
     overall = collections.Counter(r["schk_tot_grd_cd"].strip() for r in graded)
 
-    by_group: dict[str, dict[str, collections.Counter]] = collections.defaultdict(
-        lambda: collections.defaultdict(collections.Counter))
+    by_group = collections.defaultdict(lambda: collections.defaultdict(collections.Counter))
+    self_target = collections.defaultdict(collections.Counter)
     for r in graded:
         group = (r.get("faci_gb_nm") or "").strip() or "(구분 미기재)"
         name = (r.get("fcob_nm") or "").strip() or "(업종 미기재)"
         by_group[group][name][r["schk_tot_grd_cd"].strip()] += 1
+        if r.get("atnm_chk_yn") == "Y":
+            self_target[group][name] += 1
 
     unknown_groups = set(by_group) - set(GROUP_LABELS)
     if unknown_groups:
@@ -183,6 +187,7 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
             "active": len(active),
             "activeWithoutGrade": no_grade,
             "included": len(graded),
+            "activeSelfInspectionTarget": sum(1 for r in active if r.get("atnm_chk_yn") == "Y"),
         },
         "grades": [{"code": c, "name": n} for c, n in EXPECTED_GRADES.items()],
         "overall": _dist(overall),
@@ -192,7 +197,10 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
                 "label": GROUP_LABELS[group],
                 **_dist(sum(types.values(), collections.Counter())),
                 "types": sorted(
-                    ({"name": name, **_dist(counter)} for name, counter in types.items()),
+                    (
+                        {"name": name, **_dist(counter), "selfInspectionTarget": self_target[group][name]}
+                        for name, counter in types.items()
+                    ),
                     key=lambda x: -x["total"],
                 ),
             }
@@ -238,7 +246,9 @@ def report(stats: dict) -> None:
     f = stats["filter"]
     print("\n=== 수집·필터 ===")
     print(f"수집 {f['fetched']:,} → 정상운영 {f['active']:,} → 등급 있음 {f['included']:,}"
-          f" (등급 없음 {f['activeWithoutGrade']:,})")
+        f" (등급 없음 {f['activeWithoutGrade']:,})")
+    print(f"자율점검 대상 (정상운영 기준): {f['activeSelfInspectionTarget']:,}"
+        f" ({f['activeSelfInspectionTarget'] / f['active']:.1%})")
     print("운영상태:", stats["_report"]["statusCounts"])
 
     print("\n=== 전체 등급 분포 ===")
@@ -249,6 +259,8 @@ def report(stats: dict) -> None:
         _print_dist("소계", g)
         for row in g["types"]:
             _print_dist(row["name"], row)
+            ratio = row["selfInspectionTarget"] / row["total"] if row["total"] else 0
+            print(f"  {'':14}   자율점검 대상 {ratio:.0%}")
 
     y = stats["inspectionYears"]
     print(f"\n=== 점검 연도 {y['min']}~{y['max']} ===")
