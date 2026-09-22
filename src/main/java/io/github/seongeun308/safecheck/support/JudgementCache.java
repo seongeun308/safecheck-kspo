@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -33,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class JudgementCache {
 
     private final CacheProperties properties;
+    private final Clock clock;
 
     private final AtomicLong hits = new AtomicLong();
     private final AtomicLong misses = new AtomicLong();
@@ -58,7 +60,7 @@ public class JudgementCache {
             misses.incrementAndGet();
             return Optional.empty();
         }
-        if (entry.isExpired(properties.ttl())) {
+        if (entry.isExpired(clock.instant(), properties.ttl())) {   // 2. 현재 시각을 넘긴다
             store.remove(key);
             misses.incrementAndGet();
             return Optional.empty();
@@ -73,7 +75,7 @@ public class JudgementCache {
     public void put(String imageHash, String buildingType, String positionType,
                     JudgementResponse response) {
         store.put(key(imageHash, buildingType, positionType),
-                new Entry(response, Instant.now()));
+                new Entry(response, clock.instant()));
     }
 
     /** 적중률. 운영 중 캐시가 실제로 작동하는지 확인하는 용도. */
@@ -90,8 +92,8 @@ public class JudgementCache {
     }
 
     private record Entry(JudgementResponse response, Instant storedAt) {
-        boolean isExpired(Duration ttl) {
-            return Instant.now().isAfter(storedAt.plus(ttl));
+        boolean isExpired(Instant now, Duration ttl) {
+            return !now.isBefore(storedAt.plus(ttl));
         }
     }
 

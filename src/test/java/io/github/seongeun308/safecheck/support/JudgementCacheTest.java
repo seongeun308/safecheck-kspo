@@ -5,6 +5,7 @@ import io.github.seongeun308.safecheck.dto.JudgementResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -115,7 +116,7 @@ class JudgementCacheTest {
     // ------------------------------------------------------------------
 
     private static JudgementCache cache(int maxEntries, Duration ttl) {
-        return new JudgementCache(TestProperties.cacheOf(maxEntries, ttl));
+        return new JudgementCache(TestProperties.cacheOf(maxEntries, ttl), Clock.systemUTC());
     }
 
     private static JudgementResponse response(String notice) {
