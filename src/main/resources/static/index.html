@@ -92,7 +92,20 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px;
-    margin-bottom: 16px;
+  }
+
+  /* 결과 화면: 판정 결과 카드, 소견, 사례, 면책·정보 안내, 버튼 영역을
+     하나의 세로 컨테이너로 묶어 간격을 gap 하나로만 관리한다. 상태에 따라
+     빠지는 블록이 있어도(예: cases 없음) 간격이 두 배로 벌어지지 않는다. */
+  .result-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .action-group {
+    display: flex;
+    flex-direction: column;
   }
 
   h2.section-title {
@@ -165,7 +178,7 @@
     padding: 12px;
   }
 
-  .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
   .btn-row .btn { flex: 1; }
 
   .photo-input-area {
@@ -288,7 +301,6 @@
     padding: 16px;
     font-size: 1rem;
     font-weight: 600;
-    margin-bottom: 16px;
   }
 
   .judgement-item {
@@ -363,7 +375,6 @@
     border: 1px solid var(--primary);
     border-radius: var(--radius);
     padding: 16px;
-    margin-bottom: 16px;
   }
 
   .notice-box .notice-label {
@@ -396,7 +407,7 @@
   .extra-note {
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin: -8px 0 16px;
+    margin: 8px 0 0;
   }
 
   /* 공단 점검 사례 */
@@ -452,7 +463,6 @@
     font-size: 0.78rem;
     color: var(--text-muted);
     line-height: 1.6;
-    margin-top: 10px;
   }
 
   .info-notice h3 {
@@ -902,49 +912,60 @@
     var items = (result.judgements || []).slice(0, 3).map(renderJudgementItem).join("");
     var guidance = result.guidance
       ? '<p class="extra-note">' + escapeHtml(result.guidance) + "</p>" : "";
-    return (
+    var blocks = [
       '<div class="card">' +
         '<h2 class="section-title">판정 결과</h2>' +
         '<div>' + items + '</div>' +
-      '</div>' +
-      '<div class="notice-box">' +
-        '<div class="notice-label">점검 소견 초안</div>' +
-        '<div class="notice-text" id="noticeText">' + escapeHtml(result.notice || "") + '</div>' +
-        '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
-      '</div>' +
-      guidance +
-      renderCases(result.cases) +
-      renderDisclaimer() +
-      renderInfoNotice() +
-      '<button class="btn btn-primary" id="newCheckBtn" style="margin-top:4px;">새 점검 시작</button>'
-    );
+      '</div>',
+      '<div>' +
+        '<div class="notice-box">' +
+          '<div class="notice-label">점검 소견 초안</div>' +
+          '<div class="notice-text" id="noticeText">' + escapeHtml(result.notice || "") + '</div>' +
+          '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
+        '</div>' +
+        guidance +
+      '</div>',
+      renderCases(result.cases),
+      renderDisclaimer(),
+      renderInfoNotice(),
+      '<div class="action-group">' +
+        '<button class="btn btn-primary" id="newCheckBtn">새 점검 시작</button>' +
+      '</div>'
+    ];
+    return '<div class="result-stack">' + blocks.filter(Boolean).join("") + '</div>';
   }
 
   function renderNeedsBetterShot(result) {
     var items = (result.judgements || []).slice(0, 3).map(function (j) {
       return renderJudgementItem(j, true);
     }).join("");
-    return (
-      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>' +
+    var blocks = [
+      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
       '<div class="card">' +
         '<h2 class="section-title">참고 판정</h2>' +
         '<div>' + items + '</div>' +
-      '</div>' +
-      renderCases(result.cases) +
-      renderDisclaimer() +
-      renderInfoNotice() +
-      '<button class="btn btn-primary" id="retakeBtn" style="margin-top:4px;">다시 촬영하기</button>' +
-      '<button class="btn btn-text" id="newCheckBtn2" style="width:100%;">새 점검부터 시작</button>'
-    );
+      '</div>',
+      renderCases(result.cases),
+      renderDisclaimer(),
+      renderInfoNotice(),
+      '<div class="action-group">' +
+        '<button class="btn btn-primary" id="retakeBtn">다시 촬영하기</button>' +
+        '<button class="btn btn-text" id="newCheckBtn2" style="width:100%;">새 점검부터 시작</button>' +
+      '</div>'
+    ];
+    return '<div class="result-stack">' + blocks.filter(Boolean).join("") + '</div>';
   }
 
   function renderNoDefect(result) {
-    return (
-      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>' +
-      renderDisclaimer() +
-      renderInfoNotice() +
-      '<button class="btn btn-primary" id="newCheckBtn" style="margin-top:4px;">새 점검 시작</button>'
-    );
+    var blocks = [
+      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
+      renderDisclaimer(),
+      renderInfoNotice(),
+      '<div class="action-group">' +
+        '<button class="btn btn-primary" id="newCheckBtn">새 점검 시작</button>' +
+      '</div>'
+    ];
+    return '<div class="result-stack">' + blocks.filter(Boolean).join("") + '</div>';
   }
 
   function renderJudgementItem(j, faded) {
