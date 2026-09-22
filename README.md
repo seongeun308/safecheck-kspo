@@ -153,3 +153,6 @@ safecheck-kspo/
 EXIF 방향 보정 테스트는 `src/test/resources/samples/portrait.jpg`가 있을 때만
 실행됩니다. 휴대폰으로 세로 촬영한 사진을 직접 두면 됩니다.
 (개인 사진이므로 저장소에는 포함하지 않습니다)
+
+## 문서 목록
+- [운영 설계](docs/operations.md) — 비용 통제, 호출 제한, 사용자 정보 처리, 배포 구성
