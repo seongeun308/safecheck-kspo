@@ -210,10 +210,22 @@
 
   input[type="file"] { display: none; }
 
-  .preview-wrap { position: relative; margin-bottom: 14px; }
+  /* previewArea에 text-align:center를 줘서 preview-wrap을 가운데 둔다.
+     preview-wrap 자체는 inline-block으로 이미지 실제 크기만큼만
+     차지해야, 그 안의 제거 버튼(absolute)이 이미지 모서리에 맞게
+     붙는다. */
+  #previewArea { text-align: center; }
+
+  .preview-wrap {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 14px;
+  }
 
   .preview-wrap img {
-    width: 100%;
+    display: block;
+    max-width: 100%;
     max-height: 360px;
     object-fit: contain;
     border-radius: var(--radius);
