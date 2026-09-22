@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 공단 안전점검 정보(15107773)의 업종별 종합등급 분포.
+ * 공단 안전점검 정보(15107773)의 시설 구분·업종별 종합등급 분포.
  *
  * <p>{@code scripts/build_grade_stats.py}가 만든 집계 파일과 1:1로 대응한다.
  * 개별 시설 정보는 담지 않는 익명 집계다.
@@ -17,7 +17,7 @@ public record GradeStats(
         Filter filter,
         List<Grade> grades,
         Distribution overall,
-        List<BusinessType> byBusinessType,
+        List<Group> byGroup,
         InspectionYears inspectionYears
 ) {
 
@@ -33,8 +33,17 @@ public record GradeStats(
 
     public record Distribution(int total, Map<String, Integer> counts) {}
 
-    /** 업종(fcob_nm)별 분포. 체력단련장업, 수영장업 등. */
+    /**
+     * 시설 구분. 원본 값(신고업, 등록업, 공공)과 화면 표시명을 함께 둔다.
+     * 같은 업종 이름이 구분에 따라 따로 있을 수 있다(예: 인공암벽장업).
+     */
+    public record Group(String name, String label, int total,
+                        Map<String, Integer> counts, List<BusinessType> types) {}
+
+    /** 업종(fcob_nm)별 분포. 체력단련장업, 체육관 등. */
     public record BusinessType(String name, int total, Map<String, Integer> counts) {}
 
-    public record InspectionYears(String min, String max, Map<String, Integer> counts, int invalid) {}
+    /** 점검 연도 분포. 기재 오류(미래 연도 등)는 invalid로 따로 센다. */
+    public record InspectionYears(String min, String max,
+                                  Map<String, Integer> counts, int invalid) {}
 }
