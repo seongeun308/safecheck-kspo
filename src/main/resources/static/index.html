@@ -189,10 +189,23 @@
     margin-bottom: 14px;
   }
 
+  .photo-input-area.dragover {
+    border-color: var(--primary);
+    background: var(--info-bg);
+  }
+
   .photo-input-area p {
     margin: 0 0 14px;
     color: var(--text-muted);
     font-size: 0.9rem;
+  }
+
+  .photo-preparing {
+    text-align: center;
+    padding: 20px 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0 0 14px;
   }
 
   input[type="file"] { display: none; }
@@ -549,8 +562,8 @@
 
         <div id="previewArea"></div>
 
-        <div class="photo-input-area">
-          <p>사진을 촬영하거나 선택하세요<br>JPG·PNG, 10MB 이하</p>
+        <div class="photo-input-area" id="photoDropZone">
+          <p>사진을 촬영하거나 선택하세요<br>(데스크톱에서는 끌어다 놓기도 가능합니다)<br>10MB 이하</p>
           <label class="btn btn-secondary" for="photoInput" style="display:inline-block;width:auto;padding-left:24px;padding-right:24px;">
             사진 선택
           </label>
@@ -596,6 +609,8 @@
   "use strict";
 
   var MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+  var MAX_LONG_SIDE = 1600;
+  var JPEG_QUALITY = 0.9;
   var LOADING_MESSAGES = [
     "사진 확인 중…",
     "점검항목과 대조 중…",
@@ -629,6 +644,7 @@
     toPhotoBtn: document.getElementById("toPhotoBtn"),
     previewArea: document.getElementById("previewArea"),
     photoInput: document.getElementById("photoInput"),
+    photoDropZone: document.getElementById("photoDropZone"),
     photoError: document.getElementById("photoError"),
     submitBtn: document.getElementById("submitBtn"),
     backToLocationBtn: document.getElementById("backToLocationBtn"),
@@ -758,59 +774,99 @@
     }
   });
 
-  function validatePhoto(file) {
-    if (file.size > MAX_UPLOAD_BYTES) {
-      return "이미지가 너무 큽니다. 최대 10MB까지 올릴 수 있습니다.";
-    }
-    var type = (file.type || "").toLowerCase();
-    var name = (file.name || "").toLowerCase();
-    var looksHeic = type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1 ||
-                     /\.(heic|heif)$/.test(name);
-    if (looksHeic) {
-      return "HEIC 형식은 지원하지 않습니다. JPG 또는 PNG로 저장 후 다시 올려주세요.";
-    }
-    if (type && type !== "image/jpeg" && type !== "image/png") {
-      return "JPG 또는 PNG 형식만 올릴 수 있습니다.";
-    }
-    return null;
+  function showPhotoError(message) {
+    el.photoError.textContent = message;
+    el.photoError.style.display = "block";
   }
 
-  el.photoInput.addEventListener("change", function () {
-    var file = el.photoInput.files && el.photoInput.files[0];
-    if (!file) { return; }
+  function looksLikeHeic(file) {
+    var type = (file.type || "").toLowerCase();
+    var name = (file.name || "").toLowerCase();
+    return type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1 ||
+           /\.(heic|heif)$/.test(name);
+  }
 
-    var error = validatePhoto(file);
-    if (error) {
-      el.photoError.textContent = error;
-      el.photoError.style.display = "block";
-      el.submitBtn.disabled = true;
-      el.previewArea.innerHTML = "";
-      state.file = null;
-      return;
-    }
+  /**
+   * 선택/드롭된 파일을 디코딩 → 캔버스 → JPEG로 다시 인코딩한다.
+   * 결과는 state.file 하나에만 담고, 미리보기와 업로드가 그 값만 쓴다.
+   * OS 파일 핸들을 계속 들고 있지 않게 되므로, 맥 "사진" 라이브러리의
+   * 보안 스코프 접근 권한이 제출 시점에 만료되던 문제도 함께 없어진다.
+   */
+  function handleFile(file) {
+    if (!file) { return; }
 
     el.photoError.style.display = "none";
     el.submitBtn.disabled = true;
+    el.previewArea.innerHTML = '<p class="photo-preparing">사진 준비 중…</p>';
 
-    // macOS "사진" 라이브러리로 고른 파일은 보안 스코프 접근 권한이 걸려 있어,
-    // 시간이 지나 제출 시점에 다시 읽으려 하면 권한이 만료되어 빈 요청이
-    // 나가는 사례가 있다. 선택 즉시 바이트를 메모리로 읽어 일반 File로
-    // 만들어 두면 이후 OS 파일 접근 없이 그 값 하나만 쓰게 된다.
-    file.arrayBuffer().then(function (buffer) {
-      state.file = new File([buffer], "photo.jpg", { type: file.type || "image/jpeg" });
-      if (state.previewUrl) { URL.revokeObjectURL(state.previewUrl); }
-      state.previewUrl = URL.createObjectURL(state.file);
-      el.previewArea.innerHTML =
-        '<div class="preview-wrap">' +
-          '<img src="' + state.previewUrl + '" alt="선택한 사진 미리보기">' +
-          '<button type="button" class="preview-remove-btn" aria-label="사진 제거">&times;</button>' +
-        '</div>';
-      el.submitBtn.disabled = false;
-    }).catch(function () {
-      el.photoError.textContent = "사진을 불러오지 못했습니다. 다시 선택해주세요.";
-      el.photoError.style.display = "block";
-      state.file = null;
+    createImageBitmap(file, { imageOrientation: "from-image" })
+      .then(function (bitmap) {
+        var w = bitmap.width;
+        var h = bitmap.height;
+        var longSide = Math.max(w, h);
+        if (longSide > MAX_LONG_SIDE) {
+          var ratio = MAX_LONG_SIDE / longSide;
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+        if (bitmap.close) { bitmap.close(); }
+        return new Promise(function (resolve, reject) {
+          canvas.toBlob(function (blob) {
+            if (blob) { resolve(blob); } else { reject(new Error("encode-failed")); }
+          }, "image/jpeg", JPEG_QUALITY);
+        });
+      })
+      .then(function (blob) {
+        if (blob.size > MAX_UPLOAD_BYTES) {
+          el.previewArea.innerHTML = "";
+          showPhotoError("이미지가 너무 큽니다. 최대 10MB까지 올릴 수 있습니다.");
+          return;
+        }
+        state.file = new File([blob], "photo.jpg", { type: "image/jpeg" });
+        if (state.previewUrl) { URL.revokeObjectURL(state.previewUrl); }
+        state.previewUrl = URL.createObjectURL(state.file);
+        el.previewArea.innerHTML =
+          '<div class="preview-wrap">' +
+            '<img src="' + state.previewUrl + '" alt="선택한 사진 미리보기">' +
+            '<button type="button" class="preview-remove-btn" aria-label="사진 제거">&times;</button>' +
+          '</div>';
+        el.submitBtn.disabled = false;
+      })
+      .catch(function () {
+        el.previewArea.innerHTML = "";
+        state.file = null;
+        // 확장자만 보고 미리 막지 않는다. 아이폰 Safari는 HEIC를 직접 열 수
+        // 있어 여기까지 오지 않고, 데스크톱 브라우저처럼 디코딩 자체가
+        // 실패했을 때만 형식을 추정해 안내 문구를 고른다.
+        showPhotoError(looksLikeHeic(file)
+          ? "HEIC 형식은 지원하지 않습니다. JPG 또는 PNG로 저장 후 다시 올려주세요."
+          : "사진을 읽을 수 없습니다. 다른 사진을 선택해주세요.");
+      });
+  }
+
+  el.photoInput.addEventListener("change", function () {
+    handleFile(el.photoInput.files && el.photoInput.files[0]);
+  });
+
+  ["dragenter", "dragover"].forEach(function (evt) {
+    el.photoDropZone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      el.photoDropZone.classList.add("dragover");
     });
+  });
+  ["dragleave", "dragend", "drop"].forEach(function (evt) {
+    el.photoDropZone.addEventListener(evt, function () {
+      el.photoDropZone.classList.remove("dragover");
+    });
+  });
+  el.photoDropZone.addEventListener("drop", function (e) {
+    e.preventDefault();
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    handleFile(file);
   });
 
   el.submitBtn.addEventListener("click", submitJudgement);
@@ -840,12 +896,10 @@
   function submitJudgement() {
     if (state.submitting) { return; }
 
-    // 아이폰에서 사진 보관함 사진이 iCloud에서 아직 내려받히지 않은 경우
-    // change 이벤트는 발생하지만 File 크기가 0으로 잡히는 경우가 있다.
-    // 그대로 보내면 서버가 빈 이미지로 거부하므로, 요청 전에 걸러 안내한다.
+    // handleFile이 끝나야 state.file이 채워진다. 준비 중 바로 눌렀거나
+    // 변환이 실패로 끝난 경우를 대비해 제출 직전에 한 번 더 확인한다.
     if (!state.file || state.file.size === 0) {
-      el.photoError.textContent = "선택한 사진을 불러오지 못했습니다. 사진을 다시 선택해주세요.";
-      el.photoError.style.display = "block";
+      showPhotoError("사진을 다시 선택해주세요.");
       return;
     }
 
