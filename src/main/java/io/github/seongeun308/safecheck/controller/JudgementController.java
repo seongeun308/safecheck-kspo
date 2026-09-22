@@ -48,12 +48,15 @@ public class JudgementController {
 
         String clientKey = ClientIpResolver.resolve(request);
 
+        log.info("주소 판별 확인: resolved={}, xff={}",
+                mask(ClientIpResolver.resolve(request)),
+                request.getHeader("X-Forwarded-For") == null ? "없음" : "있음");
+
         log.info("판정 요청: {}바이트, 건물구분={}, 위치구분={}",
-                image.getSize(), buildingType, positionType);
+        image.getSize(), buildingType, positionType);
 
         return judgementService.judge(readBytes(image), buildingType, positionType, clientKey);
     }
-
     /** 입력 폼에 쓸 건물구분·위치구분 목록. 공단 데이터에 실재하는 값만 내린다. */
     @GetMapping("/locations")
     public LocationOptions locations() {
@@ -78,4 +81,9 @@ public class JudgementController {
     }
 
     public record LocationOptions(List<String> buildingTypes, List<String> positionTypes) {}
+
+    private static String mask(String ip) {
+        int cut = ip.lastIndexOf('.');
+        return cut > 0 ? ip.substring(0, cut) + ".*" : "***";
+    }
 }
