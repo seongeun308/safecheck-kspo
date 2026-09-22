@@ -42,6 +42,12 @@ MIN_YEAR = 2000   # 앞자리 오타(1019 등)를 걸러내기 위한 하한. �
 # 공단 등급 체계. 수집한 데이터의 코드-명칭 쌍이 이와 다르면 중단한다.
 EXPECTED_GRADES = {"01": "양호", "02": "주의", "03": "사용중지"}
 
+# 원본 값 → 화면 표시명. 체육시설법의 구분을 따른다.
+GROUP_LABELS = {
+    "신고업": "신고 체육시설업",
+    "등록업": "등록 체육시설업",
+    "공공": "공공체육시설",
+}
 
 # ----------------------------------------------------------------------
 # 수집
@@ -144,10 +150,16 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
 
     overall = collections.Counter(r["schk_tot_grd_cd"].strip() for r in graded)
 
-    by_type: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
+    by_group: dict[str, dict[str, collections.Counter]] = collections.defaultdict(
+        lambda: collections.defaultdict(collections.Counter))
     for r in graded:
+        group = (r.get("faci_gb_nm") or "").strip() or "(구분 미기재)"
         name = (r.get("fcob_nm") or "").strip() or "(업종 미기재)"
-        by_type[name][r["schk_tot_grd_cd"].strip()] += 1
+        by_group[group][name][r["schk_tot_grd_cd"].strip()] += 1
+
+    unknown_groups = set(by_group) - set(GROUP_LABELS)
+    if unknown_groups:
+        sys.exit(f"알 수 없는 시설 구분: {unknown_groups}. GROUP_LABELS를 확인하세요.")
 
     # 점검 연도: 기재 오류는 고치지 않고 따로 센다. 등급 분포에는 그대로 포함한다.
     fetched_year = int(fetched_at[:4]) if fetched_at[:4].isdigit() else dt.date.today().year
@@ -176,10 +188,19 @@ def aggregate(rows: list[dict], fetched_at: str) -> dict:
         },
         "grades": [{"code": c, "name": n} for c, n in EXPECTED_GRADES.items()],
         "overall": _dist(overall),
-        "byBusinessType": sorted(
-            ({"name": name, **_dist(counter)} for name, counter in by_type.items()),
-            key=lambda x: -x["total"],
-        ),
+        "byGroup": [
+            {
+                "name": group,
+                "label": GROUP_LABELS[group],
+                **_dist(sum(types.values(), collections.Counter())),
+                "types": sorted(
+                    ({"name": name, **_dist(counter)} for name, counter in types.items()),
+                    key=lambda x: -x["total"],
+                ),
+            }
+            for group in GROUP_LABELS if group in by_group
+            for types in [by_group[group]]
+        ],
         "inspectionYears": {
             "min": ordered[0] if ordered else None,
             "max": ordered[-1] if ordered else None,
@@ -225,9 +246,11 @@ def report(stats: dict) -> None:
     print("\n=== 전체 등급 분포 ===")
     _print_dist("전체", stats["overall"])
 
-    print(f"\n=== 업종별 ({len(stats['byBusinessType'])}종) ===")
-    for row in stats["byBusinessType"]:
-        _print_dist(row["name"], row)
+    for g in stats["byGroup"]:
+        print(f"\n=== {g['label']} ({len(g['types'])}종) ===")
+        _print_dist("소계", g)
+        for row in g["types"]:
+            _print_dist(row["name"], row)
 
     y = stats["inspectionYears"]
     print(f"\n=== 점검 연도 {y['min']}~{y['max']} ===")
