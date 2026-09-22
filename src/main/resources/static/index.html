@@ -518,6 +518,85 @@
     border-radius: 6px;
   }
 
+  /* 공단 안전점검 등급 현황 — 판정 상태를 알리는 색과 분리된
+     중립 회청색(--accent-bar) 한 가지만 쓴다. 좋고 나쁨을 뜻하는
+     색(빨강/초록)은 쓰지 않는다. */
+  .grade-highlight {
+    background: var(--info-bg);
+    border: 1px solid var(--info-border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+    word-break: keep-all;
+  }
+
+  .grade-summary {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 14px;
+    word-break: keep-all;
+  }
+
+  .grade-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .grade-bar-row {
+    display: grid;
+    grid-template-columns: 92px 1fr 44px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .grade-bar-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .grade-bar-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .grade-bar-fill {
+    height: 100%;
+    background: var(--accent-bar);
+    border-radius: 4px;
+  }
+
+  .grade-bar-value {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  .grade-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+  }
+
+  .grade-note:last-of-type { margin-bottom: 0; }
+
+  .grade-source {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    line-height: 1.5;
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
   @media (min-width: 600px) {
     #app { max-width: 560px; margin: 24px auto; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   }
@@ -550,6 +629,16 @@
         <select id="positionType">
           <option value="" disabled selected>선택하세요</option>
         </select>
+
+        <div id="facilityTypeSection" style="display:none;">
+          <label class="field-label">시설 종류 (선택)</label>
+          <select id="facilityGroupSelect">
+            <option value="">선택 안 함</option>
+          </select>
+          <select id="facilityTypeSelect" disabled>
+            <option value="">업종 선택</option>
+          </select>
+        </div>
 
         <button class="btn btn-primary" id="toPhotoBtn" disabled>다음</button>
       </div>
@@ -631,16 +720,23 @@
   var state = {
     buildingType: "",
     positionType: "",
+    facilityGroup: "",
+    facilityType: "",
     file: null,
     previewUrl: null,
     submitting: false
   };
+
+  var gradeStats = null;
 
   var el = {
     steps: document.getElementById("stepsIndicator"),
     globalError: document.getElementById("globalError"),
     buildingType: document.getElementById("buildingType"),
     positionType: document.getElementById("positionType"),
+    facilityTypeSection: document.getElementById("facilityTypeSection"),
+    facilityGroupSelect: document.getElementById("facilityGroupSelect"),
+    facilityTypeSelect: document.getElementById("facilityTypeSelect"),
     toPhotoBtn: document.getElementById("toPhotoBtn"),
     previewArea: document.getElementById("previewArea"),
     photoInput: document.getElementById("photoInput"),
@@ -748,6 +844,82 @@
 
   el.backToLocationBtn.addEventListener("click", function () {
     showStep("step-location");
+  });
+
+  // ------------------------------------------------------------------
+  // 공단 안전점검 등급 현황 (선택 항목)
+  // ------------------------------------------------------------------
+
+  function formatCount(n) {
+    return n.toLocaleString("en-US");
+  }
+
+  function ratioPct(numerator, total) {
+    if (!total) { return "0.0"; }
+    return (numerator / total * 100).toFixed(1);
+  }
+
+  // 실패해도 판정 흐름에 영향이 없어야 하므로, 실패 시 조용히 숨긴다
+  // (1단계 선택 항목은 기본이 숨김 상태, 결과 화면 섹션은 gradeStats가
+  // null이면 빈 문자열을 반환해 자연스럽게 빠진다).
+  function loadGradeStats() {
+    fetch("/api/grade-stats")
+      .then(function (res) {
+        if (!res.ok) { throw new Error("failed"); }
+        return res.json();
+      })
+      .then(function (data) {
+        gradeStats = data;
+        populateFacilityGroups();
+        el.facilityTypeSection.style.display = "block";
+      })
+      .catch(function () {
+        gradeStats = null;
+      });
+  }
+
+  function populateFacilityGroups() {
+    gradeStats.byGroup.forEach(function (g) {
+      var opt = document.createElement("option");
+      opt.value = g.name;
+      opt.textContent = g.label;
+      el.facilityGroupSelect.appendChild(opt);
+    });
+  }
+
+  function findSelectedGroup() {
+    if (!gradeStats || !state.facilityGroup) { return null; }
+    return gradeStats.byGroup.find(function (g) { return g.name === state.facilityGroup; }) || null;
+  }
+
+  // 같은 업종 이름이 구분에 따라 따로 있을 수 있어(예: 인공암벽장업),
+  // 반드시 선택된 구분의 types 안에서만 찾는다 — (구분, 업종) 쌍 식별.
+  function findSelectedType(group) {
+    if (!group || !state.facilityType) { return null; }
+    return group.types.find(function (t) { return t.name === state.facilityType; }) || null;
+  }
+
+  el.facilityGroupSelect.addEventListener("change", function () {
+    state.facilityGroup = el.facilityGroupSelect.value;
+    state.facilityType = "";
+    el.facilityTypeSelect.innerHTML = '<option value="">업종 선택</option>';
+
+    var group = findSelectedGroup();
+    if (!group) {
+      el.facilityTypeSelect.disabled = true;
+      return;
+    }
+    group.types.forEach(function (t) {
+      var opt = document.createElement("option");
+      opt.value = t.name;
+      opt.textContent = t.name + " (" + formatCount(t.total) + "개소)";
+      el.facilityTypeSelect.appendChild(opt);
+    });
+    el.facilityTypeSelect.disabled = false;
+  });
+
+  el.facilityTypeSelect.addEventListener("change", function () {
+    state.facilityType = el.facilityTypeSelect.value;
   });
 
   // ------------------------------------------------------------------
@@ -980,6 +1152,7 @@
         guidance +
       '</div>',
       renderCases(result.cases),
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1000,6 +1173,7 @@
         '<div>' + items + '</div>' +
       '</div>',
       renderCases(result.cases),
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1013,6 +1187,7 @@
   function renderNoDefect(result) {
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1078,6 +1253,100 @@
         '<h3>정보 처리 안내</h3>' +
         '<ul>' + items + '</ul>' +
       '</div>'
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // 공단 안전점검 등급 현황 — 다른 시설들의 공단 점검 결과다. 사용자가
+  // 지금 올린 사진의 판정 결과와는 무관하며, 문구에서 둘을 연결하지 않는다.
+  // ------------------------------------------------------------------
+
+  function renderGradeStatsSection() {
+    if (!gradeStats) { return ""; }
+    var group = findSelectedGroup();
+    var type = findSelectedType(group);
+    var body = (group && type)
+      ? renderGradeStatsForType(group, type)
+      : renderGradeStatsOverview();
+
+    return (
+      '<div class="card">' +
+        '<h2 class="section-title">공단 안전점검 등급 현황</h2>' +
+        body +
+        renderGradeSource() +
+      '</div>'
+    );
+  }
+
+  function renderGradeBars(items) {
+    var rows = items.map(function (it) {
+      return (
+        '<div class="grade-bar-row">' +
+          '<span class="grade-bar-label">' + it.label + '</span>' +
+          '<div class="grade-bar-track">' +
+            '<div class="grade-bar-fill" style="width:' + Math.min(parseFloat(it.pct), 100) + '%;"></div>' +
+          '</div>' +
+          '<span class="grade-bar-value">' + it.pct + '%</span>' +
+        '</div>'
+      );
+    }).join("");
+    return '<div class="grade-bars">' + rows + '</div>';
+  }
+
+  function renderGradeStatsForType(group, type) {
+    var pct = ratioPct(type.counts["02"], type.total);
+    var groupPct = ratioPct(group.counts["02"], group.total);
+    var overallPct = ratioPct(gradeStats.overall.counts["02"], gradeStats.overall.total);
+    var stopCount = type.counts["03"] || 0;
+    var isSelfTarget = type.total > 0 && (type.selfInspectionTarget / type.total) >= 0.5;
+    var typeName = escapeHtml(type.name);
+
+    var parts = [];
+    if (isSelfTarget) {
+      parts.push(
+        '<p class="grade-highlight">' + typeName + '은 자율안전점검 대상 업종입니다. ' +
+        '운영자가 직접 점검하는 업종이며, 이 서비스는 그 점검을 돕기 위해 만들었습니다.</p>'
+      );
+    }
+    parts.push(
+      '<p class="grade-summary">' + typeName + ' ' + formatCount(type.total) +
+      '개소 중 ' + pct + '%가 공단 안전점검에서 \'주의\' 등급을 받았습니다.</p>'
+    );
+    parts.push(renderGradeBars([
+      { label: typeName, pct: pct },
+      { label: escapeHtml(group.label) + " 소계", pct: groupPct },
+      { label: "전체", pct: overallPct }
+    ]));
+    if (stopCount >= 1) {
+      parts.push('<p class="grade-note">사용중지 ' + formatCount(stopCount) + '개소</p>');
+    }
+    if (type.total < 30) {
+      parts.push('<p class="grade-note">시설 수가 적어 비율은 참고용입니다.</p>');
+    }
+    return parts.join("");
+  }
+
+  function renderGradeStatsOverview() {
+    var overallPct = ratioPct(gradeStats.overall.counts["02"], gradeStats.overall.total);
+    var bars = gradeStats.byGroup.map(function (g) {
+      return { label: escapeHtml(g.label), pct: ratioPct(g.counts["02"], g.total) };
+    });
+    bars.push({ label: "전체", pct: overallPct });
+    return (
+      renderGradeBars(bars) +
+      '<p class="grade-note">1단계에서 시설 종류를 고르면 같은 업종과 비교할 수 있습니다.</p>'
+    );
+  }
+
+  function renderGradeSource() {
+    var s = gradeStats.source;
+    var y = gradeStats.inspectionYears;
+    var f = gradeStats.filter;
+    return (
+      '<p class="grade-source">출처: 국민체육진흥공단 전국체육시설 안전점검 정보(공공데이터포털 ' +
+      escapeHtml(s.datasetId) + '), ' + escapeHtml(s.fetchedAt) + ' 수집. 정상 운영 중이며 ' +
+      '안전점검 등급이 공개된 ' + formatCount(f.included) + '개소 기준, 점검일 ' +
+      escapeHtml(y.min) + '~' + escapeHtml(y.max) + '년.</p>'
     );
   }
 
@@ -1148,8 +1417,13 @@
   function resetToLocation() {
     state.buildingType = "";
     state.positionType = "";
+    state.facilityGroup = "";
+    state.facilityType = "";
     el.buildingType.value = "";
     el.positionType.value = "";
+    el.facilityGroupSelect.value = "";
+    el.facilityTypeSelect.innerHTML = '<option value="">업종 선택</option>';
+    el.facilityTypeSelect.disabled = true;
     checkLocationReady();
     resetPhoto();
     showStep("step-location");
@@ -1177,6 +1451,7 @@
   // ------------------------------------------------------------------
 
   loadLocations();
+  loadGradeStats();
   showStep("step-location");
 })();
 </script>
