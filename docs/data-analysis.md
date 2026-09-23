@@ -1,7 +1,9 @@
 # 공단 개방 데이터 전수 분석
 
-대상: 서울올림픽기념국민체육진흥공단_체육시설 안전점검 결함사진 학습 데이터_20251231
-분석일: 2026-09-14
+| 대상 | ID | 분석일 | 절 |
+|---|---|---|---|
+| 체육시설 안전점검 결함사진 학습 데이터_20251231 | 15157025 | 2026-09-14 | 1~8 |
+| 전국체육시설 안전점검 정보 | 15107773 | 2026-09-22 | 9 |
 
 ---
 
@@ -42,7 +44,7 @@
 | 1 | 균열, 누수 | 균열, 누수, 침수, 백태 | 20 |
 | 2 | 탈락, 철근노출 | 콘크리트 탈락, 철근 노출 | 20 |
 | 3 | 철골재 부식 | 철골재 부식, 도장 탈락 여부 | 20 |
-| 4 | 마감재파손 | 마감재의 파손(균열, 탈락), 오염, 누수 및 침수 흔적의 발생 여부 | 20 |
+| 4 | 마감재파손 | 마감재의 파손(균열, 탈락), 오염, 누수 및 누수, 침수 흔적의 발생 여부 | 20 |
 | 5 | 미끄럼방지 | 미끄럼 방지시설, 낙하 및 추락방지 그물 설치 등 | 20 |
 | 6 | 옥상방수마감 | 옥상 방수, 마감 등 안전상태 | 20 |
 | 7 | 통행로 | 통행로(보행로, 차도) 시설 위험물 및 안전상태 | 20 |
@@ -64,6 +66,10 @@
 
 **분포 특성**: 7개 항목이 정확히 20건으로, 자연 발생 분포가 아니라 항목당 상한을 둔
 균형 샘플로 판단된다. 따라서 이 분포로부터 결함 발생 빈도를 추론해서는 안 된다.
+
+**원문 표기 이상**: 4번(마감재파손)의 공식 문구에 '누수'가 중복 기재되어 있다
+("누수 및 누수, 침수"). 공단 원문 그대로이며 수정하지 않는다. 판정 결과의 근거가 공단
+원문임을 보장하고, 원본과의 대조 가능성을 유지하기 위해서다.
 
 ---
 
@@ -318,6 +324,28 @@
 등급은 01 양호, 02 주의, 03 사용중지 3단계다. 사용중지는 전체의 0.05% 미만이라
 화면에서는 주의 비율을 핵심 지표로 쓴다.
 
+### 자율안전점검 대상
+
+`atnm_chk_yn`(자율점검대상여부) 기준, 정상 운영 71,874개소 중 **59,019개소(82.1%)**가
+자율안전점검 대상이다. 전부 신고 체육시설업이며, 업종별로 거의 0% 또는 100%로 나뉜다.
+시설별 선택이 아니라 업종에 따라 정해지는 구분으로 보인다.
+
+| 자율점검 대상 업종 (100%) | 등급 공개 시설 | 주의 비율 |
+|---|---|---|
+| 체육도장업 | 10,804 | 1.5% |
+| 체력단련장업 | 10,047 | 1.4% |
+| 당구장업 | 9,274 | 2.8% |
+| 골프연습장업 | 5,342 | 2.6% |
+| 가상체험 체육시설업 | 5,188 | 1.6% |
+| 체육교습업 | 2,332 | 1.4% |
+
+같은 신고업이라도 수영장업, 무도학원업, 인공암벽장업 등은 0%다. 승마장업은 96개소 중
+1곳만 대상으로 표시되어 있으며 원문 그대로 둔다.
+
+자율점검 대상 여부에 따라 공단 점검 주의 비율이 다르게 나타나지만(대상 1.9%,
+비대상 11.2%), 대상과 비대상이 사실상 소규모 민간 사업장과 대형·공공 시설로 나뉘어
+있어 **자율점검의 효과로 해석하지 않는다.**
+
 ### 발견
 
 - **모집단의 82%가 소규모 민간 사업장(신고 체육시설업)이다.** 전문 점검 인력을
@@ -340,13 +368,23 @@
 
 초기 1,000건 표본만 보고 이 데이터를 "신고 체육시설업 98,488건"으로 판단했으나,
 전량 수집 결과 공공체육시설과 등록 체육시설업이 함께 포함되어 있었다. 표본이 업종 순
-정렬의 앞부분에 치우쳐 있었기 때문이다.
+정렬의 앞부분에 치우쳐 있었기 때문이다. 이후 표본 확인은 앞·중간·뒤 페이지에서
+고르게 뽑는 방식으로 바꿨다.
+
+### 같은 API의 다른 오퍼레이션
+
+| 오퍼레이션 | 건수 | 판단 |
+|---|---|---|
+| 자율안전점검결과(종합) | 479,934 | 시설코드와 제출일. 이번 서비스에는 사용하지 않음 |
+| 자율안전점검결과(분야별) | 792,858 | 분야가 2종(`03`, `04`)뿐이라 22개 점검항목과 연결되지 않음. 표본 4,858건 중 분야 등급 99.2%가 양호 |
+| 안전점검결과(분야별) | 945 | 최근 등록분만 있어 통계로 쓰기 부족 |
 
 ### 서비스 반영
 
 - 서비스 실행 중에는 API를 호출하지 않는다. 집계 결과만 `grade_stats.json`으로 포함한다
 - 개별 시설 정보(시설명·주소·좌표)는 집계 파일에 남기지 않는다
 - 사용자가 시설 구분·업종을 선택하면, 같은 업종·같은 구분·전체의 주의 비율을 나란히 보여준다
+- 선택한 업종이 자율안전점검 대상이면 그 사실을 안내한다
 - 이 통계는 다른 시설들의 점검 결과이며 사용자 시설의 등급이 아님을 화면에서 분명히 한다
 
 ---
@@ -377,61 +415,29 @@ df[["회차", "등급", "내용"]] = df["지적사항"].str.extract(
 
 ```python
 # 이미지 일괄 수집 — scripts/download_images.py
-# 이미 받은 파일은 건너뛰므로, 재실행하면 누락분만 보충된다.
-import csv, os, ssl, urllib.request
-from concurrent.futures import ThreadPoolExecutor
-
-BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-CSV = os.path.join(BASE, "defects.csv")
-OUT = os.path.join(BASE, "images")
-
-# data.csv는 CP949, data_utf8.csv는 UTF-8 — 어느 쪽이 넘어와도 읽히게 한다.
-def read_rows(path):
-    for enc in ("utf-8-sig", "cp949"):
-        try:
-            with open(path, encoding=enc) as f:
-                return list(csv.DictReader(f))
-        except UnicodeDecodeError:
-            continue
-    raise SystemExit(f"인코딩을 판별할 수 없음: {path}")
-
-# 서버가 http -> https로 301 리다이렉트하는데 인증서 검증이 실패해서 검증을 끈다.
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
-
-def fetch(row):
-    name = row["이미지파일이름"].strip()
-    url = row["이미지URL"].strip().rstrip("/") + "/" + name
-    path = os.path.join(OUT, name)
-    if os.path.exists(path) and os.path.getsize(path) > 0:
-        return ("skip", name, "")
+import pandas as pd, urllib.request, os, time
+df = pd.read_csv("data/defects.csv")
+os.makedirs("data/images", exist_ok=True)
+fail = []
+for _, r in df.iterrows():
+    url = r["이미지URL"].replace("http://", "https://") + r["이미지파일이름"]
+    dst = f"data/images/{r['이미지파일이름']}"
+    if os.path.exists(dst):
+        continue
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
-            data = resp.read()
-        if not data:
-            return ("fail", name, "empty body")
-        with open(path, "wb") as f:
-            f.write(data)
-        return ("ok", name, len(data))
-    except Exception as e:
-        return ("fail", name, repr(e))
+        urllib.request.urlretrieve(url, dst)
+    except Exception:
+        fail.append(r["순번"])
+    time.sleep(0.2)
+print("실패:", len(fail), fail[:10])
+```
 
-def main():
-    os.makedirs(OUT, exist_ok=True)
-    rows = read_rows(CSV)
-    with ThreadPoolExecutor(max_workers=8) as ex:
-        results = list(ex.map(fetch, rows))
-
-    counts = {k: sum(1 for r in results if r[0] == k) for k in ("ok", "skip", "fail")}
-    print(f"total={len(results)} ok={counts['ok']} skipped={counts['skip']} failed={counts['fail']}")
-    for status, name, detail in results:
-        if status == "fail":
-            print("FAIL:", name, detail)
-
-if __name__ == "__main__":
-    main()
+```bash
+# 안전점검 등급 분포 — scripts/build_grade_stats.py
+# 프로젝트 루트 .env에 DATA_GO_KR_KEY(디코딩 키), KSPO_SAFETY_URL 설정 후
+python3 scripts/build_grade_stats.py
+# 받은 원본으로 다시 집계 (인증키 불필요)
+python3 scripts/build_grade_stats.py --from-raw data/raw/facility_safety_20260922.json
 ```
 
 ---
@@ -442,7 +448,7 @@ if __name__ == "__main__":
 |---|---|---|---|
 | 체육시설 안전점검 결함사진 학습 데이터 | 15157025 | 2026-09-14 | CSV 다운로드 |
 | 결함사진 이미지 265건 | — | 2026-09-14 | openapi.kspo.or.kr 수집 |
-| 전국체육시설 안전점검 정보 | 15107773 | 2026-09-14 | 활용신청 |
-| 전국체육시설 정보 | 15113986 | 2026-09-14 | 활용신청 |
-| 공공체육시설 상세 정보 | 15107764 | 2026-09-14 | 활용신청 |
-| 시설물 안전관리 현황 (국토안전관리원) | 15101953 | 2026-09-14 | 활용신청 |
+| 전국체육시설 안전점검 정보 | 15107773 | 2026-09-22 | 체육시설안전정보 전량 수집 98,622건 |
+| 전국체육시설 정보 | 15113986 | 2026-09-14 | 활용신청 후 미사용. 필요한 업종·구분·운영상태가 15107773 응답에 포함됨 |
+| 공공체육시설 상세 정보 | 15107764 | 2026-09-14 | 활용신청 후 미사용. 공공시설만 다루며 주 사용자(신고업 82%)와 맞지 않고, 위치·지도 기능을 두지 않음 |
+| 시설물 안전관리 현황 (국토안전관리원) | 15101953 | 2026-09-14 | 활용신청 후 미사용. 체육시설 외 공공시설물 비교는 사용자 가치가 낮다고 판단 |
