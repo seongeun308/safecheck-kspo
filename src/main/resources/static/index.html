@@ -107,14 +107,6 @@
   .action-group {
     display: flex;
     flex-direction: column;
-    /* 버튼 영역 자체는 전체 폭을 쓰되(형제 요소인 면책 문구 등과
-       같은 폭), 버튼 크기가 넓은 화면에서 과하게 늘어나지 않도록
-       480px에서 가운데로 좁힌다. 모바일에서는 480px보다 화면이
-       좁아 이 값이 걸리지 않는다. */
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 100%;
   }
 
   h2.section-title {
@@ -697,36 +689,9 @@
     margin-right: auto;
   }
 
-  /* 결과 화면 두 단 배치. 모바일·태블릿에서는 그냥 세로로 쌓이는
-     래퍼일 뿐이라(gap이 result-stack과 같아 있으나 없으나 같은 모양)
-     1024px 미만에서는 아무 것도 바꾸지 않는다. 한쪽 칸이 비면(결함
-     없음 등) JS가 애초에 이 래퍼 없이 내용을 바로 이어붙이므로
-     빈 칸이 생기지 않는다. */
-  .result-columns {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .result-col {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 0;
-  }
-
-  @media (min-width: 1024px) {
-    .result-columns {
-      display: grid;
-      /* 왼쪽(판정 결과 계열)이 더 무거운 내용이라 넓게 잡는다.
-         align-items: start라 각 칸이 서로 높이를 맞추려 늘어나지
-         않고, 오른쪽 카드는 자기 내용 높이만큼만 차지하며 위쪽에
-         붙는다(별도 sticky 없이 이 정렬만으로 충분하다). */
-      grid-template-columns: 1.4fr 1fr;
-      align-items: start;
-      gap: 16px;
-    }
-  }
+  /* 결과 화면은 두 단으로 나누지 않고 모든 박스를 하나씩 수직으로
+     나열한다. result-stack의 gap 하나로만 간격을 관리하므로, 모든
+     자식이 자연스럽게 같은 폭(정보 처리 안내 박스와 같은 폭)을 쓴다. */
 </style>
 </head>
 <body>
@@ -1289,33 +1254,6 @@
     bindResultActions(result);
   }
 
-  // 1024px 이상에서 왼쪽/오른쪽 두 단으로 배치한다. 양쪽 다 내용이
-  // 있을 때만 그리드로 묶고, 한쪽이 비면(결함 없음 등) 그냥 나머지
-  // 블록만 이어붙여 result-stack의 다른 항목과 같은 폭 한 단으로
-  // 둔다 — 그래야 빈 칸이 어색하게 남지 않는다.
-  function renderTwoColumn(leftBlocks, rightBlocks) {
-    var left = leftBlocks.filter(Boolean);
-    var right = rightBlocks.filter(Boolean);
-    if (left.length && right.length) {
-      return (
-        '<div class="result-columns">' +
-          '<div class="result-col">' + left.join("") + '</div>' +
-          '<div class="result-col">' + right.join("") + '</div>' +
-        '</div>'
-      );
-    }
-    return left.concat(right).join("");
-  }
-
-  // 등급 현황은 1단계에서 업종까지 골랐을 때만 오른쪽 단을 차지할
-  // 만큼 비중 있는 내용이 된다. 안 골랐으면(구분 소계 개요만 있거나
-  // 아예 없음) 왼쪽 흐름에 얹어 한 단으로 둔다.
-  function hasFacilityTypeDetail() {
-    var group = findSelectedGroup();
-    var type = findSelectedType(group);
-    return !!(group && type);
-  }
-
   function renderDefectFound(result) {
     var items = (result.judgements || []).slice(0, 3).map(renderJudgementItem).join("");
     var guidance = result.guidance
@@ -1334,16 +1272,11 @@
         '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
         guidance +
       '</div>';
-    var gradeBlock = renderGradeStatsSection();
-    var leftBlocks = [judgementCard, noticeBlock, renderCases(result.cases)];
-    var rightBlocks = [];
-    if (hasFacilityTypeDetail()) {
-      rightBlocks.push(gradeBlock);
-    } else {
-      leftBlocks.push(gradeBlock);
-    }
     var blocks = [
-      renderTwoColumn(leftBlocks, rightBlocks),
+      judgementCard,
+      noticeBlock,
+      renderCases(result.cases),
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1362,17 +1295,11 @@
         '<h2 class="section-title">참고 판정</h2>' +
         '<div>' + items + '</div>' +
       '</div>';
-    var gradeBlock = renderGradeStatsSection();
-    var leftBlocks = [judgementCard, renderCases(result.cases)];
-    var rightBlocks = [];
-    if (hasFacilityTypeDetail()) {
-      rightBlocks.push(gradeBlock);
-    } else {
-      leftBlocks.push(gradeBlock);
-    }
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
-      renderTwoColumn(leftBlocks, rightBlocks),
+      judgementCard,
+      renderCases(result.cases),
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1384,13 +1311,9 @@
   }
 
   function renderNoDefect(result) {
-    // 판정 항목·소견·사례가 아예 없는 상태라 왼쪽에 마주 세울 내용이
-    // 없다. 등급 현황이 있어도 두 단으로 나누지 않고 그대로 한 단
-    // 전체 폭으로 보여준다(renderTwoColumn이 왼쪽이 비면 알아서
-    // 한 단으로 되돌린다).
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
-      renderTwoColumn([], [renderGradeStatsSection()]),
+      renderGradeStatsSection(),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
