@@ -612,6 +612,35 @@
   @media (min-width: 600px) {
     #app { max-width: 560px; margin: 24px auto; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   }
+
+  /* 641px부터: 좌우 여백이 과도하게 남지 않도록 본문 폭을 단계적으로 넓힌다.
+     641~1023px는 720px, 1024px 이상은 960px. 위치 선택·사진 단계는
+     입력 폼이라 폭을 넓히면 오히려 쓰기 어려워, 그 두 단계의 카드만
+     640px로 도로 좁혀 가운데 둔다(아래 #step-location/#step-photo 규칙). */
+  @media (min-width: 641px) {
+    #app { max-width: 720px; }
+  }
+
+  @media (min-width: 1024px) {
+    #app { max-width: 960px; }
+  }
+
+  #step-location .card,
+  #step-photo .card {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* 본문 텍스트가 넓은 화면에서 한 줄에 너무 많이 담기지 않도록
+     70~80자 안팎에서 줄바꿈되게 상한을 둔다. 정의된 최대 폭(960px)
+     안에서는 이 값이 실제로 걸리지 않고, 그보다 더 넓어질 때의
+     안전장치다. */
+  .disclaimer,
+  .info-notice,
+  .grade-source {
+    max-width: 78ch;
+  }
 </style>
 </head>
 <body>
