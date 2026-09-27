@@ -106,6 +106,14 @@
   .action-group {
     display: flex;
     flex-direction: column;
+    /* 버튼 영역 자체는 전체 폭을 쓰되(형제 요소인 면책 문구 등과
+       같은 폭), 버튼 크기가 넓은 화면에서 과하게 늘어나지 않도록
+       480px에서 가운데로 좁힌다. 모바일에서는 480px보다 화면이
+       좁아 이 값이 걸리지 않는다. */
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
   }
 
   h2.section-title {
@@ -655,20 +663,14 @@
   @media (min-width: 1024px) {
     .result-columns {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      /* 왼쪽(판정 결과 계열)이 더 무거운 내용이라 넓게 잡는다.
+         align-items: start라 각 칸이 서로 높이를 맞추려 늘어나지
+         않고, 오른쪽 카드는 자기 내용 높이만큼만 차지하며 위쪽에
+         붙는다(별도 sticky 없이 이 정렬만으로 충분하다). */
+      grid-template-columns: 1.4fr 1fr;
       align-items: start;
       gap: 16px;
     }
-  }
-
-  /* 본문 텍스트가 넓은 화면에서 한 줄에 너무 많이 담기지 않도록
-     70~80자 안팎에서 줄바꿈되게 상한을 둔다. 정의된 최대 폭(960px)
-     안에서는 이 값이 실제로 걸리지 않고, 그보다 더 넓어질 때의
-     안전장치다. */
-  .disclaimer,
-  .info-notice,
-  .grade-source {
-    max-width: 78ch;
   }
 </style>
 </head>
@@ -1222,6 +1224,15 @@
     return left.concat(right).join("");
   }
 
+  // 등급 현황은 1단계에서 업종까지 골랐을 때만 오른쪽 단을 차지할
+  // 만큼 비중 있는 내용이 된다. 안 골랐으면(구분 소계 개요만 있거나
+  // 아예 없음) 왼쪽 흐름에 얹어 한 단으로 둔다.
+  function hasFacilityTypeDetail() {
+    var group = findSelectedGroup();
+    var type = findSelectedType(group);
+    return !!(group && type);
+  }
+
   function renderDefectFound(result) {
     var items = (result.judgements || []).slice(0, 3).map(renderJudgementItem).join("");
     var guidance = result.guidance
@@ -1231,20 +1242,25 @@
         '<h2 class="section-title">판정 결과</h2>' +
         '<div>' + items + '</div>' +
       '</div>';
+    // 보조 문구(guidance)를 카드 밖 별도 요소로 두지 않고 소견 카드
+    // 안에 넣어, 카드에 딸린 부연설명으로 보이게 한다.
     var noticeBlock =
-      '<div>' +
-        '<div class="notice-box">' +
-          '<div class="notice-label">점검 소견 초안</div>' +
-          '<div class="notice-text" id="noticeText">' + escapeHtml(result.notice || "") + '</div>' +
-          '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
-        '</div>' +
+      '<div class="notice-box">' +
+        '<div class="notice-label">점검 소견 초안</div>' +
+        '<div class="notice-text" id="noticeText">' + escapeHtml(result.notice || "") + '</div>' +
+        '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
         guidance +
       '</div>';
+    var gradeBlock = renderGradeStatsSection();
+    var leftBlocks = [judgementCard, noticeBlock, renderCases(result.cases)];
+    var rightBlocks = [];
+    if (hasFacilityTypeDetail()) {
+      rightBlocks.push(gradeBlock);
+    } else {
+      leftBlocks.push(gradeBlock);
+    }
     var blocks = [
-      renderTwoColumn(
-        [judgementCard, noticeBlock],
-        [renderCases(result.cases), renderGradeStatsSection()]
-      ),
+      renderTwoColumn(leftBlocks, rightBlocks),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1263,12 +1279,17 @@
         '<h2 class="section-title">참고 판정</h2>' +
         '<div>' + items + '</div>' +
       '</div>';
+    var gradeBlock = renderGradeStatsSection();
+    var leftBlocks = [judgementCard, renderCases(result.cases)];
+    var rightBlocks = [];
+    if (hasFacilityTypeDetail()) {
+      rightBlocks.push(gradeBlock);
+    } else {
+      leftBlocks.push(gradeBlock);
+    }
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
-      renderTwoColumn(
-        [judgementCard],
-        [renderCases(result.cases), renderGradeStatsSection()]
-      ),
+      renderTwoColumn(leftBlocks, rightBlocks),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1280,6 +1301,10 @@
   }
 
   function renderNoDefect(result) {
+    // 판정 항목·소견·사례가 아예 없는 상태라 왼쪽에 마주 세울 내용이
+    // 없다. 등급 현황이 있어도 두 단으로 나누지 않고 그대로 한 단
+    // 전체 폭으로 보여준다(renderTwoColumn이 왼쪽이 비면 알아서
+    // 한 단으로 되돌린다).
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
       renderTwoColumn([], [renderGradeStatsSection()]),
