@@ -632,6 +632,33 @@
     margin-right: auto;
   }
 
+  /* 결과 화면 두 단 배치. 모바일·태블릿에서는 그냥 세로로 쌓이는
+     래퍼일 뿐이라(gap이 result-stack과 같아 있으나 없으나 같은 모양)
+     1024px 미만에서는 아무 것도 바꾸지 않는다. 한쪽 칸이 비면(결함
+     없음 등) JS가 애초에 이 래퍼 없이 내용을 바로 이어붙이므로
+     빈 칸이 생기지 않는다. */
+  .result-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .result-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .result-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      gap: 16px;
+    }
+  }
+
   /* 본문 텍스트가 넓은 화면에서 한 줄에 너무 많이 담기지 않도록
      70~80자 안팎에서 줄바꿈되게 상한을 둔다. 정의된 최대 폭(960px)
      안에서는 이 값이 실제로 걸리지 않고, 그보다 더 넓어질 때의
@@ -1175,15 +1202,34 @@
     bindResultActions(result);
   }
 
+  // 1024px 이상에서 왼쪽/오른쪽 두 단으로 배치한다. 양쪽 다 내용이
+  // 있을 때만 그리드로 묶고, 한쪽이 비면(결함 없음 등) 그냥 나머지
+  // 블록만 이어붙여 result-stack의 다른 항목과 같은 폭 한 단으로
+  // 둔다 — 그래야 빈 칸이 어색하게 남지 않는다.
+  function renderTwoColumn(leftBlocks, rightBlocks) {
+    var left = leftBlocks.filter(Boolean);
+    var right = rightBlocks.filter(Boolean);
+    if (left.length && right.length) {
+      return (
+        '<div class="result-columns">' +
+          '<div class="result-col">' + left.join("") + '</div>' +
+          '<div class="result-col">' + right.join("") + '</div>' +
+        '</div>'
+      );
+    }
+    return left.concat(right).join("");
+  }
+
   function renderDefectFound(result) {
     var items = (result.judgements || []).slice(0, 3).map(renderJudgementItem).join("");
     var guidance = result.guidance
       ? '<p class="extra-note">' + escapeHtml(result.guidance) + "</p>" : "";
-    var blocks = [
+    var judgementCard =
       '<div class="card">' +
         '<h2 class="section-title">판정 결과</h2>' +
         '<div>' + items + '</div>' +
-      '</div>',
+      '</div>';
+    var noticeBlock =
       '<div>' +
         '<div class="notice-box">' +
           '<div class="notice-label">점검 소견 초안</div>' +
@@ -1191,9 +1237,12 @@
           '<button type="button" class="copy-btn" id="copyNoticeBtn">소견 복사하기</button>' +
         '</div>' +
         guidance +
-      '</div>',
-      renderCases(result.cases),
-      renderGradeStatsSection(),
+      '</div>';
+    var blocks = [
+      renderTwoColumn(
+        [judgementCard, noticeBlock],
+        [renderCases(result.cases), renderGradeStatsSection()]
+      ),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1207,14 +1256,17 @@
     var items = (result.judgements || []).slice(0, 3).map(function (j) {
       return renderJudgementItem(j, true);
     }).join("");
-    var blocks = [
-      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
+    var judgementCard =
       '<div class="card">' +
         '<h2 class="section-title">참고 판정</h2>' +
         '<div>' + items + '</div>' +
-      '</div>',
-      renderCases(result.cases),
-      renderGradeStatsSection(),
+      '</div>';
+    var blocks = [
+      '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
+      renderTwoColumn(
+        [judgementCard],
+        [renderCases(result.cases), renderGradeStatsSection()]
+      ),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
@@ -1228,7 +1280,7 @@
   function renderNoDefect(result) {
     var blocks = [
       '<div class="guidance-banner">' + escapeHtml(result.guidance || "") + '</div>',
-      renderGradeStatsSection(),
+      renderTwoColumn([], [renderGradeStatsSection()]),
       renderDisclaimer(),
       renderInfoNotice(),
       '<div class="action-group">' +
