@@ -20,6 +20,7 @@
     --primary-dark: #133026;
     --primary-contrast: #ffffff;
     --accent-bar: #2f7d95;
+    --grade-bar: #9aa7b0;
     --info-bg: #eaf2f6;
     --info-border: #b9d4e0;
     --error-bg: #fdecea;
@@ -130,6 +131,20 @@
     margin-bottom: 6px;
   }
 
+  /* 필수 항목(건물구분·위치구분)과 같은 굵기·테두리로 나란히 있으면
+     "이것도 꼭 채워야 하나" 싶어진다. 위에 구분선을 두고 라벨 톤을
+     낮춰 선택 항목임을 시각적으로도 드러낸다. */
+  .optional-section {
+    margin-top: 4px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .optional-label {
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
   select {
     width: 100%;
     padding: 13px 12px;
@@ -206,6 +221,36 @@
     margin: 0 0 14px;
     color: var(--text-muted);
     font-size: 0.9rem;
+  }
+
+  .photo-input-trigger {
+    display: inline-block;
+    width: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  /* 사진을 이미 고른 뒤에는 "사진 선택"이 더 이상 다음 행동(판정
+     시작하기)과 같은 무게로 강조돼선 안 된다. 점선 박스·설명 문구를
+     없애고 작은 텍스트 링크로 낮춘다. */
+  .photo-input-area.has-photo {
+    border: none;
+    padding: 0;
+    margin-bottom: 14px;
+  }
+
+  .photo-input-area.has-photo .photo-input-hint {
+    display: none;
+  }
+
+  .photo-input-area.has-photo .photo-input-trigger {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 6px 4px;
+    text-decoration: underline;
   }
 
   .photo-preparing {
@@ -343,8 +388,12 @@
 
   .judgement-item:last-child { border-bottom: none; }
 
-  .judgement-item.reference {
-    opacity: 0.55;
+  /* 확신도가 낮아 참고용인 항목은 "참고" 배지로 구분하고, 제목만
+     한 톤 낮춘다. 전체를 opacity로 흐리면 실외 스마트폰 화면에서
+     대비가 크게 떨어져 아예 안 보일 수 있어, 대비를 유지한 채
+     구분한다. */
+  .judgement-item.reference .judgement-short {
+    color: var(--text-muted);
   }
 
   .reference-tag {
@@ -477,20 +526,15 @@
     margin: 0;
   }
 
-  /* 하단 상시 고지 */
-  .disclaimer {
-    background: #eef1f4;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 13px 14px;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    line-height: 1.6;
-  }
-
+  /* 하단 상시 고지. 면책 문구(법적 책임 안내)와 정보 처리 안내(개인정보
+     안내)는 성격이 다른 공지인데 같은 회색 박스가 나란히 붙으면
+     하나의 글 뭉치처럼 읽힌다. 둘 다 제목을 달고, 왼쪽 띠 색을
+     달리해(면책=중성 회색, 정보 처리=옅은 파랑) 한눈에 구분되게 한다. */
+  .disclaimer,
   .info-notice {
     background: #eef1f4;
     border: 1px solid var(--border);
+    border-left-width: 3px;
     border-radius: var(--radius);
     padding: 13px 14px;
     font-size: 0.78rem;
@@ -498,6 +542,15 @@
     line-height: 1.6;
   }
 
+  .disclaimer {
+    border-left-color: #b9c2ca;
+  }
+
+  .info-notice {
+    border-left-color: var(--info-border);
+  }
+
+  .disclaimer h3,
   .info-notice h3 {
     margin: 0 0 6px;
     font-size: 0.8rem;
@@ -581,19 +634,21 @@
     padding-top: 2px;
   }
 
-  .grade-bar-track { margin-top: 2px; }
-
+  /* 판정 확신도 막대(.confidence-fill, --accent-bar)와 다른 색·굵기를
+     써서, 스크롤 중에 "내 사진 판정"과 "다른 시설 공단 통계"를
+     혼동하지 않게 한다. */
   .grade-bar-track {
-    height: 8px;
+    margin-top: 2px;
+    height: 6px;
     background: var(--border);
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
   }
 
   .grade-bar-fill {
     height: 100%;
-    background: var(--accent-bar);
-    border-radius: 4px;
+    background: var(--grade-bar);
+    border-radius: 3px;
   }
 
   .grade-bar-value {
@@ -702,8 +757,8 @@
           <option value="" disabled selected>선택하세요</option>
         </select>
 
-        <div id="facilityTypeSection" style="display:none;">
-          <label class="field-label">시설 종류 (선택)</label>
+        <div id="facilityTypeSection" class="optional-section" style="display:none;">
+          <label class="field-label optional-label">시설 종류 (선택)</label>
           <select id="facilityGroupSelect">
             <option value="">선택 안 함</option>
           </select>
@@ -724,8 +779,8 @@
         <div id="previewArea"></div>
 
         <div class="photo-input-area" id="photoDropZone">
-          <p>사진을 촬영하거나 선택하세요<br>(데스크톱에서는 끌어다 놓기도 가능합니다)<br>10MB 이하</p>
-          <label class="btn btn-secondary" for="photoInput" style="display:inline-block;width:auto;padding-left:24px;padding-right:24px;">
+          <p class="photo-input-hint">사진을 촬영하거나 선택하세요<br>(데스크톱에서는 끌어다 놓기도 가능합니다)<br>10MB 이하</p>
+          <label class="btn btn-secondary photo-input-trigger" for="photoInput" id="photoInputLabel">
             사진 선택
           </label>
           <input type="file" id="photoInput" accept="image/*">
@@ -772,11 +827,15 @@
   var MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
   var MAX_LONG_SIDE = 1600;
   var JPEG_QUALITY = 0.9;
+  // 실측 응답 시간이 5~10초라 4개(0/3/6/9초)로 대부분 커버되지만,
+  // 느린 경우 마지막 문구에서 정지한 것처럼 보이지 않도록 안심시키는
+  // 문구를 하나 더 둔다(9~12초 구간).
   var LOADING_MESSAGES = [
     "사진 확인 중…",
     "점검항목과 대조 중…",
     "소견 작성 중…",
-    "공단 사례 찾는 중…"
+    "공단 사례 찾는 중…",
+    "거의 다 됐습니다…"
   ];
   var DISCLAIMER_TEXT =
     "본 판정은 자율안전점검 수행을 보조하기 위한 참고 자료이며, 체육시설법에 따른 " +
@@ -813,6 +872,7 @@
     previewArea: document.getElementById("previewArea"),
     photoInput: document.getElementById("photoInput"),
     photoDropZone: document.getElementById("photoDropZone"),
+    photoInputLabel: document.getElementById("photoInputLabel"),
     photoError: document.getElementById("photoError"),
     submitBtn: document.getElementById("submitBtn"),
     backToLocationBtn: document.getElementById("backToLocationBtn"),
@@ -829,7 +889,11 @@
     ["step-result", "4 결과"]
   ];
 
-  function showStep(id) {
+  // 뒤로가기를 누르면 앱을 완전히 벗어나 입력한 내용(사진 포함)이
+  // 통째로 날아가던 문제를 막는다. 각 단계 전환을 히스토리에 쌓아두고,
+  // popstate로 되돌아온 경우엔(fromHistory) 다시 쌓지 않는다. 사진·
+  // 선택값은 원래도 DOM/state에 그대로 남아있어 이 처리만으로 복원된다.
+  function showStep(id, fromHistory) {
     STEP_LABELS.forEach(function (pair) {
       document.getElementById(pair[0]).classList.toggle("active", pair[0] === id);
     });
@@ -838,6 +902,9 @@
       return '<span class="' + cls + '">' + pair[1] + "</span>";
     }).join(" · ");
     window.scrollTo(0, 0);
+    if (!fromHistory) {
+      history.pushState({ step: id }, "", location.pathname + location.search);
+    }
   }
 
   function showGlobalError(message) {
@@ -1008,6 +1075,8 @@
     el.photoInput.value = "";
     el.photoError.style.display = "none";
     el.submitBtn.disabled = true;
+    el.photoDropZone.classList.remove("has-photo");
+    el.photoInputLabel.textContent = "사진 선택";
   }
 
   // previewArea는 사진을 고를 때마다 innerHTML이 통째로 바뀌므로,
@@ -1066,7 +1135,15 @@
       })
       .then(function (blob) {
         if (blob.size > MAX_UPLOAD_BYTES) {
+          // 직전에 유효한 사진을 골라둔 상태에서 너무 큰 파일로
+          // 바꾸려 한 경우, state.file이 이전 사진으로 남아있으면
+          // 화면엔 오류가 떠 있는데 제출은 그 이전 사진으로 되는
+          // 불일치가 생긴다. 비워서 다시 고르게 한다.
+          state.file = null;
+          el.submitBtn.disabled = true;
           el.previewArea.innerHTML = "";
+          el.photoDropZone.classList.remove("has-photo");
+          el.photoInputLabel.textContent = "사진 선택";
           showPhotoError("이미지가 너무 큽니다. 최대 10MB까지 올릴 수 있습니다.");
           return;
         }
@@ -1079,10 +1156,16 @@
             '<button type="button" class="preview-remove-btn" aria-label="사진 제거">&times;</button>' +
           '</div>';
         el.submitBtn.disabled = false;
+        // 사진을 고른 뒤에는 "사진 선택"이 "판정 시작하기"와 같은 무게로
+        // 경쟁하지 않도록 작은 텍스트 링크로 낮춘다.
+        el.photoDropZone.classList.add("has-photo");
+        el.photoInputLabel.textContent = "다른 사진 선택";
       })
       .catch(function () {
         el.previewArea.innerHTML = "";
         state.file = null;
+        el.photoDropZone.classList.remove("has-photo");
+        el.photoInputLabel.textContent = "사진 선택";
         // 확장자만 보고 미리 막지 않는다. 아이폰 Safari는 HEIC를 직접 열 수
         // 있어 여기까지 오지 않고, 데스크톱 브라우저처럼 디코딩 자체가
         // 실패했을 때만 형식을 추정해 안내 문구를 고른다.
@@ -1361,7 +1444,12 @@
   }
 
   function renderDisclaimer() {
-    return '<div class="disclaimer">' + escapeHtml(DISCLAIMER_TEXT) + '</div>';
+    return (
+      '<div class="disclaimer">' +
+        '<h3>이용 안내</h3>' +
+        escapeHtml(DISCLAIMER_TEXT) +
+      '</div>'
+    );
   }
 
   function renderInfoNotice() {
@@ -1573,9 +1661,15 @@
 
   // ------------------------------------------------------------------
 
+  window.addEventListener("popstate", function (e) {
+    var step = (e.state && e.state.step) || "step-location";
+    showStep(step, true);
+  });
+
   loadLocations();
   loadGradeStats();
-  showStep("step-location");
+  history.replaceState({ step: "step-location" }, "", location.pathname + location.search);
+  showStep("step-location", true);
 })();
 </script>
 </body>
