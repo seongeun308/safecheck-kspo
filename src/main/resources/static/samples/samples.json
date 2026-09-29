@@ -1,0 +1,82 @@
+[
+  {
+    "id": "opening-crack",
+    "label": "출입구 상부 벽체 균열",
+    "hint": "개구부 모서리에서 사선으로 진행되는 전형적인 균열",
+    "photo": "/samples/opening-crack.jpeg",
+    "buildingType": "건물 내외부",
+    "positionType": "기둥 보 바닥 벽 계단 (주요구조부)",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "sill-rebar",
+    "label": "창대 콘크리트 탈락, 철근 노출",
+    "hint": "창호 하부 창대가 깨지며 철근이 드러난 상태",
+    "photo": "/samples/sill-rebar.jpeg",
+    "buildingType": "건물 내외부",
+    "positionType": "창호",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "ceiling-hole",
+    "label": "천정 마감재 파손",
+    "hint": "조명기구가 떨어져 나가고 천정 마감이 뚫린 상태",
+    "photo": "/samples/ceiling-hole.jpeg",
+    "buildingType": "건물 내외부",
+    "positionType": "바닥 벽(내외부) 천정, 계단(비구조부)",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "wall-crack",
+    "label": "벽체 수직 균열",
+    "hint": "천정 접합부에서 아래로 이어지는 균열",
+    "photo": "/samples/wall-crack.jpeg",
+    "buildingType": "건물 내외부",
+    "positionType": "기둥 보 바닥 벽 계단 (주요구조부)",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "planter-cap",
+    "label": "화단 담장 갓돌 이탈",
+    "hint": "경계 담장 상부 석재가 어긋나며 단차가 생긴 상태",
+    "photo": "/samples/planter-cap.jpeg",
+    "buildingType": "건물주변",
+    "positionType": "부대시설",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "planter-cap-close",
+    "label": "화단 경계석 균열 (근접)",
+    "hint": "같은 구조물을 가까이에서 찍은 사진",
+    "photo": "/samples/planter-cap-close.jpeg",
+    "buildingType": "건물주변",
+    "positionType": "부대시설",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "too-close",
+    "label": "너무 가까이 찍은 사진",
+    "hint": "금속 부재가 무엇인지 알 수 없어 전경 사진을 요청받는 경우",
+    "photo": "/samples/too-close.jpeg",
+    "buildingType": "건물주변",
+    "positionType": "부대시설",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  },
+  {
+    "id": "paving-gap",
+    "label": "바닥 포장재 이격",
+    "hint": "사선으로 찍혀 부재를 특정하기 어려운 사진",
+    "photo": "/samples/paving-gap.jpeg",
+    "buildingType": "건물주변",
+    "positionType": "통행로",
+    "facilityGroup": "공공",
+    "facilityType": "체육관"
+  }
+]
